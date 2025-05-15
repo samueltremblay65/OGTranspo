@@ -1,8 +1,9 @@
 class Destination {
-    constructor(name, location, type, radius) {
+    constructor(name, location, type, population, radius) {
         this.name = name;
         this.location = location;
         this.type = type;
+        this.population = population;
         this.radius = radius;
     }
 }
