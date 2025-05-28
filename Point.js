@@ -9,6 +9,10 @@ class Point {
         return distance;
     }
 
+    isWithin(radius, point) {
+        return this.distanceTo(point) <= radius;
+    }
+
     randomPointAround(radius) {
         const x = this.x - radius + Math.round(Math.random() * 2 * radius);
         const y = this.y - radius + Math.round(Math.random() * 2 * radius);
