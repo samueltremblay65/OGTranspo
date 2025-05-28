@@ -32,6 +32,7 @@ let money = STARTING_BUDGET;
 
 let mode = "view";
 let location_viewing = false;
+let transit_density_map = false;
 
 // Drawing functions
 function drawBackground() {
@@ -62,14 +63,17 @@ function drawTransitLine(line) {
         ctx.stroke();
     }
 
-    // Draw Stops
     line.stops.forEach((stop) => {
-        const location = convertToCanvasCoordinates(stop.location);
-        ctx.drawImage(station_icon, location.x - 8, location.y - 8, 16, 16);
+        const canvas_location = convertToCanvasCoordinates(stop.location);
+        ctx.beginPath();
+        ctx.arc(canvas_location.x, canvas_location.y, 8, 0, 2 * Math.PI);
+        ctx.fill();
     });
 }
 
 function showCommuters() {
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "black";
     commuters.forEach((commuter) => {
         const canvas_location = convertToCanvasCoordinates(commuter.location);
         ctx.beginPath();
@@ -90,7 +94,18 @@ function convertToGameCoordinates(location) {
 }
 
 // Transit construction functions
-function addStop(location, ) {
+function addStop(location) {
+    // If location is not further than 100 meters from previous station, don't add stop
+    if(selected_line.stops.length != 0 && 
+        location.isWithin(100 / M_PER_PIXEL, selected_line.stops[selected_line.stops.length - 1].location)) return;
+
+    for(var i = 0; i < stations.length; i++) {
+        if(location.isWithin(100 / M_PER_PIXEL, stations[i].location)) {
+            selected_line.addStop(stations[i]);
+            return;
+        }
+    }
+
     const station = new Station("station", location);
     stations.push(station);
 
@@ -99,23 +114,25 @@ function addStop(location, ) {
 
 // Costing functions
 function calculateLineCost(line) {
+    // Calculates only cost of railway
     let cost = 0;
 
     if(line.stops.length < 2) {
-        return line.stops.length * COST_STATION;
+        return cost;
     }
 
     for(let i = 0; i < line.stops.length - 2; i++) {
         cost += COST_RAIL_M * M_PER_PIXEL * line.stops[i].location.distanceTo(line.stops[i+1].location);
     }
 
-    cost += line.stops.length * COST_STATION;
     return cost;
 }
 
 function calculateTotaCost() {
     let cost = 0;
     transit_lines.forEach((line) => cost += calculateLineCost(line));
+
+    cost += stations.length * COST_STATION;
     
     money = STARTING_BUDGET - cost;
     console.log("Total cost = " + cost);
@@ -211,8 +228,7 @@ document.getElementById("btn_view_coordinates").addEventListener("click", (e) =>
 document.getElementById("btn_transit_density").addEventListener("click", (e) => {
     e.stopImmediatePropagation();
 
-    if(mode != "transit_density") mode = "transit_density";
-    else mode = "view";
+    transit_density_map = !transit_density_map;
 });
 
 
@@ -220,6 +236,7 @@ document.getElementById("btn_transit_density").addEventListener("click", (e) => 
 const reset_map_button = document.getElementById("btn_reset_map");
 reset_map_button.addEventListener("click", () => {
     transit_lines.splice(0, transit_lines.length);
+    stations.splice(0, stations.length);
 });
 
 // Add new transit line
@@ -247,18 +264,17 @@ new_transit_line_button.addEventListener("click", (e) => {
 
 // Building transit line
 game_container.addEventListener("click", (e) => {
-    if(location_viewing) {
-        let pos = getMousePos(canvas, e);
-        let canvas_location = new Point(pos.x, pos.y);
-        let game_location = convertToGameCoordinates(canvas_location);
+    let pos = getMousePos(canvas, e);
+    let canvas_location = new Point(pos.x, pos.y);
 
+    let game_location = convertToGameCoordinates(canvas_location);
+
+    if(location_viewing) {
         console.log(game_location);
     }
 
     if(mode == "build") {
-        let pos = getMousePos(canvas, e);
-        const location = new Point(center.x + pos.x / scaling, center.y + pos.y / scaling);
-        addStop(location);
+        addStop(game_location);
     }
 });
 
@@ -276,7 +292,7 @@ setInterval(function() {
     drawBackground();
     drawTransitLines();
 
-    if(mode == "transit_density") {
+    if(transit_density_map) {
         showCommuters();
     }
 
