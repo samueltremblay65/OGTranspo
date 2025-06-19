@@ -9,24 +9,13 @@ const station_icon = new Image();
 station_icon.src = "circle.png";
 
 let scaling = 2.2
-const FPS = 30;
-const MAP_SPEED = 200 / FPS;
+
 
 let center = {x: 800, y: 500};
 
 const transit_lines = [];
 const stations = [];
 const commuters = [];
-
-// Constants
-const M_PER_PIXEL = 8;
-const WALKING_PACE = 15
-const TRAIN_SPEED = 1.2;
-const STOP_TIME = 1;
-
-const STARTING_BUDGET = 1000000;
-const COST_STATION = 5000;
-const COST_RAIL_M = 5;
 
 let money = STARTING_BUDGET;
 
@@ -106,7 +95,7 @@ function addStop(location) {
         }
     }
 
-    const station = new Station("station", location);
+    const station = new Station("station " + stations.length, location);
     stations.push(station);
 
     selected_line.addStop(station);
@@ -148,7 +137,6 @@ function populateNeighborhood() {
         }
     });
 }
-
 
 // Controls
 document.onkeydown = checkKey;
@@ -231,17 +219,23 @@ document.getElementById("btn_transit_density").addEventListener("click", (e) => 
     transit_density_map = !transit_density_map;
 });
 
+document.getElementById("btn_simulate").addEventListener("click", (e) => {
+    e.stopImmediatePropagation();
+
+    simulate();
+});
 
 // Clear all construction
 const reset_map_button = document.getElementById("btn_reset_map");
-reset_map_button.addEventListener("click", () => {
+reset_map_button.addEventListener("click", (e) => {
+    e.stopImmediatePropagation();
     transit_lines.splice(0, transit_lines.length);
     stations.splice(0, stations.length);
 });
 
 // Add new transit line
-let lines = 0;
 let selected_line = null;
+let color = 0;
 const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'brown', 'grey'];
 const new_transit_line_button = document.getElementById("btn_new_transit_line");
 new_transit_line_button.addEventListener("click", (e) => {
@@ -249,8 +243,8 @@ new_transit_line_button.addEventListener("click", (e) => {
     if(mode != "build") {
         mode = "build";
         console.log(mode);
-        lines++;
-        let new_line = new TransitLine("Line " + lines.toString(), COLORS[Math.floor(Math.random() * COLORS.length)]);
+        let new_line = new TransitLine("Line " + (transit_lines.length + 1), COLORS[color], TRAIN_SPEED, STOP_TIME);
+        color = color + 1 % COLORS.length;
         transit_lines.push(new_line);
         selected_line = new_line;
     }
@@ -259,7 +253,6 @@ new_transit_line_button.addEventListener("click", (e) => {
         mode = "view";
         calculateTotaCost();
     }
-
 });
 
 // Building transit line
@@ -280,6 +273,87 @@ game_container.addEventListener("click", (e) => {
 
 // Simulation set up
 populateNeighborhood();
+
+// Simulation code
+function simulate() {
+    commute_times = [];
+    for(let i = 0; i < 100; i++)  {
+        let commuter = commuters[Math.floor(Math.random() * commuters.length)];
+        const trip = calculateTransitTrip(commuter.location, commuter.destination.location);
+        commute_times.push(trip.calculateTotalDuration());
+    }
+
+    console.log(calculateAverage(commute_times));
+    return calculateAverage(commute_times);
+}
+
+function test_simulate() {
+    const location1 = new Point(1668, 460);
+    const location2 = new Point(1228, 824);
+
+    const trip = calculateTransitTrip(location1, location2);
+    console.log(trip);
+    console.log(trip.calculateTotalDuration());
+}
+
+function calculateTransitTrip(location1, location2) {
+    const shortest_trips = [];
+
+    // Add walking trip
+    const distance = location1.distanceTo(location2);
+    const walk_time = calculateWalkingTime(distance);
+    const walk_trip = new TransitTrip([new TransitStep(location1, location2, "walk", null, walk_time)]);
+
+    if(stations.length == 0) {
+        return walk_trip;
+    }
+
+    // Calculate transit trips
+    const NEARBY_STATIONS = 3;
+    const start_stations = findClosestStations(location1, NEARBY_STATIONS);
+    const end_stations = findClosestStations(location2, NEARBY_STATIONS);
+
+    console.log(start_stations, end_stations);
+
+    start_stations.forEach(start => {
+        end_stations.forEach(end => {
+            if(start == end) return;
+            const transit_trip = start.shortestTransitTrip(end);
+
+            if(transit_trip == null) return;
+            transit_trip.addWalkingSteps(location1, location2, calculateWalkingTime);
+            shortest_trips.push(transit_trip);
+        });
+    });
+
+    let shortest_trip = walk_trip;
+    shortest_trips.forEach(trip => {
+        if(trip.calculateTotalDuration() < shortest_trip.calculateTotalDuration()) shortest_trip = trip;
+    });
+
+    return shortest_trip;
+}
+
+function findClosestStations(location, n) {
+    const sortByDistance = (a, b) => a.location.distanceTo(location) - b.location.distanceTo(location);
+
+    const sorted = [...stations].sort(sortByDistance);
+
+    return sorted.slice(0, n);
+}
+
+function calculateAverage(arr) {
+    let total = 0;
+    for(let i = 0; i < arr.length; i++)
+    {
+        total += arr[i];
+    }
+    return total / arr.length;
+}
+
+function calculateWalkingTime(distance) {
+    return distance * M_PER_PIXEL / WALKING_SPEED;
+}
 
 // GameLoop
 setInterval(function() {
