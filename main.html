@@ -17,7 +17,7 @@
         <!-- <div id="map"></div> -->
         <button class="game_button" id="btn_new_transit_line">New Transit Line</button>
         <button class="game_button" id="btn_transit_density">Transit Density Map</button>
-        <button class="game_button">Budget Allocation</button>
+        <button class="game_button" id="btn_simulate">Simulate</button>
         <button class="game_button" id="btn_reset_map">Reset map</button>
         <button class="game_button">Settings</button>
         <button class="game_button" id="btn_view_coordinates">View coordinates</button>
@@ -27,11 +27,14 @@
     <canvas id="canvas" width="1500px" height="1000px"></canvas>
 </body>
     <!-- prettier-ignore -->
+    <script src="Constants.js"></script>
     <script src="Point.js"></script>
     <script src="Destination.js"></script>
     <script src="destinations.js"></script>
     <script src="Commuter.js"></script>
     <script src="Station.js"></script>
     <script src="TransitLine.js"></script>
+    <script src="TransitStep.js"></script>
+    <script src="TransitTrip.js"></script>
     <script src="main.js"></script>
 </html>
