@@ -64,6 +64,8 @@ function showCommuters() {
     ctx.lineWidth = 1;
     ctx.strokeStyle = "black";
     commuters.forEach((commuter) => {
+        if(!isOnScreen(commuter.location)) return;
+
         const canvas_location = convertToCanvasCoordinates(commuter.location);
         ctx.beginPath();
         ctx.arc(canvas_location.x, canvas_location.y, 5, 0, 2 * Math.PI);
@@ -80,6 +82,13 @@ function convertToCanvasCoordinates(location) {
 
 function convertToGameCoordinates(location) {
     return new Point(center.x + location.x / scaling, center.y + location.y / scaling);
+}
+
+function isOnScreen(location) {
+    const canvas_location = convertToCanvasCoordinates(location);
+    if(canvas_location.x < 0 || canvas_location.y < 0 || 
+        canvas_location.x > canvas.width || canvas_location.y > canvas.height) return false;
+    return true;
 }
 
 // Transit construction functions
@@ -156,8 +165,28 @@ function calculateTotaCost() {
 // Transit simulation functions
 function populateNeighborhood() {
     destinations.forEach((destination) => {
+
+        if(destination.type == "city") {
+            let population = 0;
+
+            while(population < destination.population) {
+                const x = Math.round(Math.random() * game_map.width);
+                const y = Math.round(Math.random() * game_map.height);
+
+                const location = new Point(x, y);
+
+                console.log(location);
+                commuters.push(new Commuter(location, destinations[Math.floor(Math.random() * destinations.length)]));
+                population++;
+            }
+            return;
+        }
+
         for(let i = 0; i < destination.population; i++) {
-            const location = destination.location.randomPointAround(destination.radius / M_PER_PIXEL);
+            let location = destination.location.evenlyDistributedPointAround(destination.radius / M_PER_PIXEL);
+            if(destination.options != null && destination.options.distribution == "radial") {
+                location = destination.location.randomPointAround(destination.radius / M_PER_PIXEL);
+            }
             commuters.push(new Commuter(location, destinations[Math.floor(Math.random() * destinations.length)]));
         }
     });
@@ -306,8 +335,11 @@ game_container.addEventListener("click", (e) => {
     }
 });
 
-// Simulation set up
-populateNeighborhood();
+game_map.onload = function() {
+    // Simulation set up
+    populateNeighborhood();
+}
+
 
 // Simulation code
 function simulate() {

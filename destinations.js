@@ -12,10 +12,14 @@ function addDestinations() {
     const westboro_east = new Destination("Westboro", new Point(867, 1026), "neighborhood", 100, 1000);
     const downtown = new Destination("Downtown", new Point(1385, 645), "neighborhood", 200, 400);
     const sandyhill = new Destination("Sandy Hill", new Point(1578, 500), "neighborhood", 300, 1300);
-    const centertown = new Destination("Centertown", new Point(1406, 846), "neighborhood", 300, 1300);
-    const mechanicsville = new Destination("Mechanicsville", new Point(1111, 936), "neighborhood", 60, 850);
+
+    const radial_options = {distribution: "radial"};
+
+    const centertown = new Destination("Centertown", new Point(1406, 846), "neighborhood", 500, 2000, radial_options);
+    const mechanicsville = new Destination("Mechanicsville", new Point(1111, 936), "neighborhood", 100, 1000);
     const experimental_farm = new Destination("Experimental farm", new Point(1008, 1309), "neighborhood", 60, 800);
+    const full_city = new Destination("Ottawa", new Point(500, 800), "city", 2000, 10000);
 
     destinations.push(parliament, airport, rideau_centre, uottawa, dows, westboro, westboro_east, downtown, sandyhill, 
-        centertown, mechanicsville, experimental_farm);
+        centertown, mechanicsville, experimental_farm, full_city);
 }
