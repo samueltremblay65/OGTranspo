@@ -41,4 +41,9 @@ class TransitLine {
     this.stops.push(station);
     station.addLine(this);
   }
+
+  removeStop(station) {
+    const index = this.stops.indexOf(station);
+    this.stops.splice(index, 1);
+  }
 }

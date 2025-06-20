@@ -91,14 +91,39 @@ function addStop(location) {
     for(var i = 0; i < stations.length; i++) {
         if(location.isWithin(100 / M_PER_PIXEL, stations[i].location)) {
             selected_line.addStop(stations[i]);
+            actionStack.push({type:"add_stop", line: selected_line, station: station});
             return;
         }
     }
 
     const station = new Station("station " + stations.length, location);
     stations.push(station);
-
     selected_line.addStop(station);
+    
+    actionStack.push({type:"add_station", line: selected_line, station: station});
+}
+
+function undoAction(action) {
+    if(action.type == "add_station") {
+        const index = stations.indexOf(action.station);
+        stations.splice(index, 1);
+        action.line.removeStop(action.station);
+    }
+    else if(action.type == "add_stop") {
+        action.line.removeStop(action.station);
+    }
+    else if(action.type == "add_line") {
+        const index = transit_lines.indexOf(action.line);
+        transit_lines.splice(index, 1);
+        color = action.color;
+        mode = "view";
+        selected_line = null;
+    }
+    else if(action.type == "finish_line") {
+        mode = "build";
+        selected_line = action.line;
+        console.log("Resuming construction of line");
+    }
 }
 
 // Costing functions
@@ -142,6 +167,8 @@ function populateNeighborhood() {
 document.onkeydown = checkKey;
 document.onkeyup = checkKeyUp;
 
+const actionStack = [];
+
 function checkKey(e) {
 
     e = e || window.event;
@@ -161,6 +188,12 @@ function checkKey(e) {
     else if (e.keyCode == '39') {
        // right arrow
        controls.right = true;
+    }
+
+    if (e.ctrlKey && e.keyCode == 90) {
+        console.log('Ctrl+z: undoing last action');
+        const action = actionStack.pop();
+        if(action != null) undoAction(action);
     }
 }
 
@@ -244,12 +277,14 @@ new_transit_line_button.addEventListener("click", (e) => {
         mode = "build";
         console.log(mode);
         let new_line = new TransitLine("Line " + (transit_lines.length + 1), COLORS[color], TRAIN_SPEED, STOP_TIME);
-        color = color + 1 % COLORS.length;
         transit_lines.push(new_line);
         selected_line = new_line;
+        actionStack.push({type: "add_line", target: new_line, color: color});
+        color = color + 1 % COLORS.length;
     }
     else{
         // Complete the line build and calculate the cost of the build
+        actionStack.push({type:"finish_line", line: selected_line});
         mode = "view";
         calculateTotaCost();
     }
@@ -312,8 +347,6 @@ function calculateTransitTrip(location1, location2) {
     const NEARBY_STATIONS = 3;
     const start_stations = findClosestStations(location1, NEARBY_STATIONS);
     const end_stations = findClosestStations(location2, NEARBY_STATIONS);
-
-    console.log(start_stations, end_stations);
 
     start_stations.forEach(start => {
         end_stations.forEach(end => {
