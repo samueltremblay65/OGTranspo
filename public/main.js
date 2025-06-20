@@ -173,18 +173,29 @@ function populateNeighborhood() {
 
                 const location = new Point(x, y);
 
-                commuters.push(new Commuter(location, destinations[Math.floor(Math.random() * destinations.length)]));
-                population++;
+                if(getGameMapColor(location) == "white") {
+                    commuters.push(new Commuter(location, destinations[Math.floor(Math.random() * destinations.length)]));
+                    population++;
+                }
             }
             return;
         }
 
         for(let i = 0; i < destination.population; i++) {
-            let location = destination.location.evenlyDistributedPointAround(destination.radius / M_PER_PIXEL);
-            if(destination.options != null && destination.options.distribution == "radial") {
-                location = destination.location.randomPointAround(destination.radius / M_PER_PIXEL);
+            let population = 0;
+
+            while(population < destination.population) {
+                let location = destination.location.evenlyDistributedPointAround(destination.radius / M_PER_PIXEL);
+                if(destination.options != null && destination.options.distribution == "radial") {
+                    location = destination.location.randomPointAround(destination.radius / M_PER_PIXEL);
+                }
+
+                if(getGameMapColor(location) != "water") {
+                    commuters.push(new Commuter(location, destinations[Math.floor(Math.random() * destinations.length)]));
+                    population++;
+                }
             }
-            commuters.push(new Commuter(location, destinations[Math.floor(Math.random() * destinations.length)]));
+            return;            
         }
     });
 }
@@ -325,6 +336,7 @@ game_container.addEventListener("click", (e) => {
 
     if(location_viewing) {
         console.log(game_location);
+        console.log(getGameMapColor(game_location));
     }
 
     if(mode == "build") {
@@ -447,6 +459,12 @@ function calculateWalkingTime(distance) {
 }
 
 function getGameMapColor(location) {
-    return game_map_canvas.getContext('2d').getImageData(location.x, location.y, 1, 1).data;
+    const pixel_data = game_map_canvas.getContext('2d').getImageData(location.x, location.y, 1, 1).data;
+
+    if(pixel_data[0] == 245 && pixel_data[1] == 243 && pixel_data[2] == 243) return "white";
+
+    if(pixel_data[0] == 144 && pixel_data[1] == 218 && pixel_data[2] == 238) return "water";
+
+    else return pixel_data;
 }
 
