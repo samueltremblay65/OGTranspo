@@ -5,11 +5,9 @@ let ctx = canvas.getContext("2d");
 const game_map = new Image();
 game_map.src = "map.png";
 
-const station_icon = new Image();
-station_icon.src = "circle.png";
+const game_map_canvas = document.createElement('canvas');
 
-let scaling = 2.2
-
+let scaling = 2.2;
 
 let center = {x: 800, y: 500};
 
@@ -175,7 +173,6 @@ function populateNeighborhood() {
 
                 const location = new Point(x, y);
 
-                console.log(location);
                 commuters.push(new Commuter(location, destinations[Math.floor(Math.random() * destinations.length)]));
                 population++;
             }
@@ -336,10 +333,39 @@ game_container.addEventListener("click", (e) => {
 });
 
 game_map.onload = function() {
+    game_map_canvas.width = game_map.width;
+    game_map_canvas.height = game_map.height;
+    game_map_canvas.getContext('2d').drawImage(game_map, 0, 0, game_map.width, game_map.height);
+
     // Simulation set up
     populateNeighborhood();
-}
 
+    // GameLoop
+    setInterval(function() {
+        // Controls loop for map movement
+        if(controls.up) center.y -= MAP_SPEED;
+        if(controls.down) center.y += MAP_SPEED;
+        if(controls.left) center.x -= MAP_SPEED;
+        if(controls.right) center.x += MAP_SPEED;
+
+        if(center.x < 0) center.x = 0;
+        if(center.y < 0) center.y = 0;
+        
+        if(center.x + canvas.width / scaling > game_map.width) center.x = game_map.width - canvas.width / scaling;
+        if(center.y + canvas.height / scaling > game_map.height) center.y = game_map.height - canvas.height / scaling;
+        
+        // Draw
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
+        drawTransitLines();
+
+        // Show commuters
+        if(transit_density_map) {
+            showCommuters();
+        }
+
+    }, 1000 / FPS);
+}
 
 // Simulation code
 function simulate() {
@@ -420,28 +446,7 @@ function calculateWalkingTime(distance) {
     return distance * M_PER_PIXEL / WALKING_SPEED;
 }
 
-// GameLoop
-setInterval(function() {
-    // Controls loop for map movement
-    if(controls.up) center.y -= MAP_SPEED;
-    if(controls.down) center.y += MAP_SPEED;
-    if(controls.left) center.x -= MAP_SPEED;
-    if(controls.right) center.x += MAP_SPEED;
+function getGameMapColor(location) {
+    return game_map_canvas.getContext('2d').getImageData(location.x, location.y, 1, 1).data;
+}
 
-    if(center.x < 0) center.x = 0;
-    if(center.y < 0) center.y = 0;
-    
-    if(center.x + canvas.width / scaling > game_map.width) center.x = game_map.width - canvas.width / scaling;
-    if(center.y + canvas.height / scaling > game_map.height) center.y = game_map.height - canvas.height / scaling;
-    
-    // Draw
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawBackground();
-    drawTransitLines();
-
-    // Show commuters
-    if(transit_density_map) {
-        showCommuters();
-    }
-
-}, 1000 / FPS);
