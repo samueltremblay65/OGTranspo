@@ -390,15 +390,24 @@ function calculateWalkingTime(distance) {
 
 // GameLoop
 setInterval(function() {
+    // Controls loop for map movement
     if(controls.up) center.y -= MAP_SPEED;
     if(controls.down) center.y += MAP_SPEED;
     if(controls.left) center.x -= MAP_SPEED;
     if(controls.right) center.x += MAP_SPEED;
 
+    if(center.x < 0) center.x = 0;
+    if(center.y < 0) center.y = 0;
+    
+    if(center.x + canvas.width / scaling > game_map.width) center.x = game_map.width - canvas.width / scaling;
+    if(center.y + canvas.height / scaling > game_map.height) center.y = game_map.height - canvas.height / scaling;
+    
+    // Draw
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
     drawTransitLines();
 
+    // Show commuters
     if(transit_density_map) {
         showCommuters();
     }
