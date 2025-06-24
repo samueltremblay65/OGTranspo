@@ -195,7 +195,7 @@ function populateNeighborhood() {
                     population++;
                 }
             }
-            return;            
+            return;
         }
     });
 }
@@ -321,8 +321,10 @@ new_transit_line_button.addEventListener("click", (e) => {
     }
     else{
         // Complete the line build and calculate the cost of the build
+
         actionStack.push({type:"finish_line", line: selected_line});
         mode = "view";
+
         calculateTotaCost();
     }
 });
@@ -381,15 +383,50 @@ game_map.onload = function() {
 
 // Simulation code
 function simulate() {
-    commute_times = [];
+    let transit_trips = [];
     for(let i = 0; i < 100; i++)  {
         let commuter = commuters[Math.floor(Math.random() * commuters.length)];
         const trip = calculateTransitTrip(commuter.location, commuter.destination.location);
-        commute_times.push(trip.calculateTotalDuration());
+        transit_trips.push(trip);
     }
 
-    console.log(calculateAverage(commute_times));
-    return calculateAverage(commute_times);
+    let statistics = calculateTransitStatistics(transit_trips);
+    console.log(statistics);
+    return statistics.averageTime;
+}
+
+function calculateTransitStatistics(trips) {
+    const times = [];
+    const walk_times = [];
+
+    const metro_line_usage = {};
+
+    transit_lines.forEach(line => {
+        metro_line_usage[line.name] = 0;
+    });
+
+    trips.forEach(trip => {
+        const time = trip.calculateTotalDuration();
+        times.push(time);
+
+        let walk_time = 0;
+
+        trip.steps.forEach(step => {
+            
+            if(step.mode == "walk") {
+                walk_time += step.walk_time;
+            }
+            else if(step.mode == "metro") {
+                metro_line_usage[step.line.name]++;
+            }
+        });
+        walk_times.push(walk_time);
+    });
+    
+    const averageTime = calculateAverage(times);
+    const averageWalkTime = calculateAverage(walk_times);
+
+    return {averageTime: averageTime, averageWalkTime: averageWalkTime, lineUsage: metro_line_usage};
 }
 
 function test_simulate() {
