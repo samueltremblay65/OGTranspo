@@ -33,6 +33,38 @@ class TransitLine {
     return time;
   }
 
+  getConnectionPoints() {
+    const connection_points = [];
+
+    this.stops.forEach(stop => { 
+      if(stop.hasMultipleLines()) connection_points.push(stop);
+    });
+
+    return connection_points;
+  }
+
+  getVisitedConnectionPoints(start, end) {
+    let index1 = this.stops.indexOf(start);
+    let index2 = this.stops.indexOf(end);
+
+    if(index1 > index2) {
+      const tmp = index1;
+      index1 = index2;
+      index2 = tmp;
+    }
+
+    const visited = []
+
+    for(let i = index1; i < index2; i++)
+    {
+      if(this.stops[i].hasMultipleLines()){
+        visited.push(this.stops[i]);
+      }
+    }
+    console.log(visited);
+    return visited;
+  }
+
   calculateTrainTime(distance) {
     return distance * 8 / this.train_speed;
   }
