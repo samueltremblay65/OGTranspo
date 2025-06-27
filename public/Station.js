@@ -101,6 +101,8 @@ class Station {
             });
         }
 
+        if(possible_trips.length == 0) return null;
+
         let shortest = possible_trips[0];
         let shortest_time = shortest.calculateTotalDuration();
 

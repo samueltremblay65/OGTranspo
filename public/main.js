@@ -451,7 +451,7 @@ function calculateTransitTrip(location1, location2) {
     }
 
     // Calculate transit trips
-    const NEARBY_STATIONS = 1;
+    const NEARBY_STATIONS = 3;
     const start_stations = findClosestStations(location1, NEARBY_STATIONS);
     const end_stations = findClosestStations(location2, NEARBY_STATIONS);
 
@@ -471,6 +471,8 @@ function calculateTransitTrip(location1, location2) {
         if(trip.calculateTotalDuration() < shortest_trip.calculateTotalDuration()) shortest_trip = trip;
     });
 
+    console.log(shortest_trips)
+
     return shortest_trip;
 }
 
@@ -479,7 +481,7 @@ function findClosestStations(location, n) {
 
     const sorted = [...stations].sort(sortByDistance);
 
-    return sorted.slice(0, n);
+    return sorted.slice(0, Math.min(n, sorted.length));
 }
 
 function calculateAverage(arr) {
