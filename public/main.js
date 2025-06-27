@@ -98,7 +98,7 @@ function addStop(location) {
     for(var i = 0; i < stations.length; i++) {
         if(location.isWithin(100 / M_PER_PIXEL, stations[i].location)) {
             selected_line.addStop(stations[i]);
-            actionStack.push({type:"add_stop", line: selected_line, station: station});
+            actionStack.push({type:"add_stop", line: selected_line, station: stations[i]});
             return;
         }
     }
@@ -292,7 +292,7 @@ document.getElementById("btn_transit_density").addEventListener("click", (e) => 
 document.getElementById("btn_simulate").addEventListener("click", (e) => {
     e.stopImmediatePropagation();
 
-    simulate();
+    test_simulate();
 });
 
 // Clear all construction
@@ -471,6 +471,8 @@ function calculateTransitTrip(location1, location2) {
         if(trip.calculateTotalDuration() < shortest_trip.calculateTotalDuration()) shortest_trip = trip;
     });
 
+    console.log(shortest_trips)
+
     return shortest_trip;
 }
 
@@ -479,7 +481,7 @@ function findClosestStations(location, n) {
 
     const sorted = [...stations].sort(sortByDistance);
 
-    return sorted.slice(0, n);
+    return sorted.slice(0, Math.min(n, sorted.length));
 }
 
 function calculateAverage(arr) {

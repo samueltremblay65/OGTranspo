@@ -8,7 +8,7 @@ class TransitStep {
     }
 
     print() {
-        console.log(`Take lien ${line} from ${start.name} to ${this.end.name}`);
+        console.log(`Take line ${line} from ${start.name} to ${this.end.name}`);
     }
 
 
