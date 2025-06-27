@@ -14,7 +14,7 @@ class TransitTrip {
     }
 
     addVisitedConnectionPoints(visited) {
-        this.visited.concat(visited);
+        this.visited = this.visited.concat(visited);
     }
 
     addMetroTransfer(station, line) {
@@ -38,17 +38,19 @@ class TransitTrip {
         return this.steps[this.steps.length - 1].end;
     }
 
-    join(trip) {
-        if(this.getLastStop() == trip.steps[0].start) {
-            trip.steps.forEach(step => {
-                this.steps.push(step);
-            });
-        }
+    combine(trip) {
+        const new_trip = new TransitTrip(this.steps);
+        trip.steps.forEach(step => {
+            new_trip.steps.push(step);
+        });
+        new_trip.visited = this.visited;
+        return new_trip;
     }
 
     branch(step) {
         const new_trip = new TransitTrip(this.steps);
         new_trip.steps.push(step);
+        new_trip.visited = this.visited;
         return new_trip;
     }
 

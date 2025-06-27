@@ -50,8 +50,6 @@ class Station {
         // All intelligent possible transit trips. Will filter by length later
         const possible_trips = [];
 
-        console.log("Shortest transit trip");
-
         // If has direct connection, add shortest one to the list of possible trips
         if(this.sharesLine(station)) {
             possible_trips.push(this.shortestDirectConnection(station));
@@ -67,7 +65,6 @@ class Station {
                     return;
                 }
                 else {
-                    console.log(stop);
                     const step = new TransitStep(this, stop, "metro", line, 0);
                     const trip = new TransitTrip([step]);
                     trip.addVisitedConnectionPoints(line.getVisitedConnectionPoints(this, stop));
@@ -78,12 +75,12 @@ class Station {
 
         // Search loop
         while(queue.length > 0) {
-            const trip = queue.pop();
+            let trip = queue.pop();
 
             const currentStop = trip.getLastStop();
 
             if(currentStop.sharesLine(station)) {
-                trip.join(currentStop.shortestDirectConnection(station));
+                trip = trip.combine(currentStop.shortestDirectConnection(station));
                 possible_trips.push(trip);
                 continue;
             }
@@ -95,10 +92,11 @@ class Station {
                 const connectionPoints = line.getConnectionPoints();
 
                 connectionPoints.forEach(connectionPoint => {
-                    if(trip.visited.includes(connectionPoint)) console.log(connectionPoint);
-                    
-                    const new_trip = trip.branch(new TransitStep(currentStop, connectionPoint, "metro", line, 0));
-                    queue.push(new_trip);
+                    if(!trip.visited.includes(connectionPoint)) {
+                        const new_trip = trip.branch(new TransitStep(currentStop, connectionPoint, "metro", line, 0));
+                        new_trip.addVisitedConnectionPoints(line.getVisitedConnectionPoints(currentStop, connectionPoint));
+                        queue.push(new_trip);
+                    }
                 });
             });
         }

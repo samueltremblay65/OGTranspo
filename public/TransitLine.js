@@ -53,15 +53,14 @@ class TransitLine {
       index2 = tmp;
     }
 
-    const visited = []
+    const visited = [];
 
-    for(let i = index1; i < index2; i++)
+    for(let i = index1; i <= index2; i++)
     {
       if(this.stops[i].hasMultipleLines()){
         visited.push(this.stops[i]);
       }
     }
-    console.log(visited);
     return visited;
   }
 
