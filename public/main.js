@@ -471,8 +471,6 @@ function calculateTransitTrip(location1, location2) {
         if(trip.calculateTotalDuration() < shortest_trip.calculateTotalDuration()) shortest_trip = trip;
     });
 
-    console.log(shortest_trips)
-
     return shortest_trip;
 }
 
