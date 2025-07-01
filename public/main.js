@@ -91,9 +91,13 @@ function isOnScreen(location) {
 
 // Transit construction functions
 function addStop(location) {
-    // If location is not further than 100 meters from previous station, don't add stop
-    if(selected_line.stops.length != 0 && 
-        location.isWithin(100 / M_PER_PIXEL, selected_line.stops[selected_line.stops.length - 1].location)) return;
+    // If location is not further than 100 meters from previous stations on the line
+    let too_close = false;
+    selected_line.stops.forEach(station => {
+        if(location.isWithin(100/M_PER_PIXEL, station.location)) too_close = true;
+    })
+
+    if(too_close) return;
 
     for(var i = 0; i < stations.length; i++) {
         if(location.isWithin(100 / M_PER_PIXEL, stations[i].location)) {
@@ -125,11 +129,12 @@ function undoAction(action) {
         color = action.color;
         mode = "view";
         selected_line = null;
+        new_transit_line_button.innerHTML = "New transit line";
     }
     else if(action.type == "finish_line") {
         mode = "build";
         selected_line = action.line;
-        console.log("Resuming construction of line");
+        new_transit_line_button.innerHTML = "Finish construction"
     }
 }
 
@@ -137,6 +142,8 @@ function undoAction(action) {
 function calculateLineCost(line) {
     // Calculates only cost of railway
     let cost = 0;
+
+    cost += COST_STATION * line.stops.length;
 
     if(line.stops.length < 2) {
         return cost;
@@ -152,8 +159,6 @@ function calculateLineCost(line) {
 function calculateTotaCost() {
     let cost = 0;
     transit_lines.forEach((line) => cost += calculateLineCost(line));
-
-    cost += stations.length * COST_STATION;
     
     money = STARTING_BUDGET - cost;
     console.log("Total cost = " + cost);
@@ -278,11 +283,6 @@ document.getElementById("btn_zoom_in").addEventListener("click", (e) => {
     if(scaling < 3 ) scaling += 0.2;
 });
 
-document.getElementById("btn_view_coordinates").addEventListener("click", (e) => {
-    e.stopImmediatePropagation();
-    location_viewing = !location_viewing;
-})
-
 document.getElementById("btn_transit_density").addEventListener("click", (e) => {
     e.stopImmediatePropagation();
 
@@ -291,8 +291,22 @@ document.getElementById("btn_transit_density").addEventListener("click", (e) => 
 
 document.getElementById("btn_simulate").addEventListener("click", (e) => {
     e.stopImmediatePropagation();
+    if(mode == "build") return;
 
-    test_simulate();
+    simulate();
+});
+
+document.getElementById("btn_build_line_continue").addEventListener("click", function(e) {
+    e.stopImmediatePropagation();
+    let line_name = document.getElementById("input_line_name").value;
+
+    if(line_name == null || line_name.length == 0) line_name = "Line " + (transit_lines.length + 1);
+    let new_line = new TransitLine(line_name, COLORS[color % COLORS.length], TRAIN_SPEED, STOP_TIME);
+    transit_lines.push(new_line);
+    selected_line = new_line;
+    actionStack.push({type: "add_line", target: new_line, color: color});
+    color = color + 1 % COLORS.length;
+    hideBuildLineDialog();
 });
 
 // Clear all construction
@@ -306,26 +320,16 @@ reset_map_button.addEventListener("click", (e) => {
 // Add new transit line
 let selected_line = null;
 let color = 0;
-const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'brown', 'grey'];
+const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'brown', 'grey', ""];
 const new_transit_line_button = document.getElementById("btn_new_transit_line");
 new_transit_line_button.addEventListener("click", (e) => {
     e.stopImmediatePropagation();
     if(mode != "build") {
-        mode = "build";
-        console.log(mode);
-        let new_line = new TransitLine("Line " + (transit_lines.length + 1), COLORS[color], TRAIN_SPEED, STOP_TIME);
-        transit_lines.push(new_line);
-        selected_line = new_line;
-        actionStack.push({type: "add_line", target: new_line, color: color});
-        color = color + 1 % COLORS.length;
+        showBuildLineDialog();
     }
     else{
         // Complete the line build and calculate the cost of the build
-
-        actionStack.push({type:"finish_line", line: selected_line});
-        mode = "view";
-
-        calculateTotaCost();
+        showConfirmLineDialog();
     }
 });
 
@@ -345,6 +349,68 @@ game_container.addEventListener("click", (e) => {
         addStop(game_location);
     }
 });
+
+document.getElementById("btn_close_simulation_modal").addEventListener("click", hideSimulationDialog);
+
+document.getElementById("btn_confirm_line_continue").addEventListener("click", function() {
+    actionStack.push({type:"finish_line", line: selected_line});
+    mode = "view";
+    new_transit_line_button.innerHTML = "New transit line";
+    hideConfirmLineDialog();
+});
+
+document.getElementById("btn_confirm_line_cancel").addEventListener("click", function() {
+    let action;
+    do {
+        action = actionStack.pop();
+        undoAction(action);
+    }while(action.type != "add_line");
+    mode = "view";
+    new_transit_line_button.innerHTML = "New transit line";
+    hideConfirmLineDialog();
+});
+
+function showSimulationDialog(statistics) {
+    document.getElementById("simulation_modal").style.visibility = "visible";
+    let minutes = Math.round(statistics.averageTime / 60);
+    document.getElementById("tb_transit_time").innerHTML = minutes + " minutes";
+
+    minutes = Math.round(statistics.averageWalkTime / 60);
+    document.getElementById("tb_transit_walking_time").innerHTML = minutes + " minutes";
+
+    document.getElementById("tb_connections").innerHTML = statistics.connections + " transfers";
+
+    document.getElementById("tb_longest").innerHTML = Math.round(statistics.longest_trip / 60) + " minutes";
+}
+
+function hideSimulationDialog() {
+    document.getElementById("simulation_modal").style.visibility = "hidden";
+}
+
+function showBuildLineDialog() {
+    document.getElementById("build_line_modal").style.visibility = "visible";
+}
+
+function hideBuildLineDialog() {
+    document.getElementById("build_line_modal").style.visibility = "hidden";
+    mode = "build";
+    new_transit_line_button.innerHTML = "Finish construction";
+}
+
+function showConfirmLineDialog() {
+    document.getElementById("confirm_line_modal").style.visibility = "visible";
+
+    const line_cost = calculateLineCost(selected_line);
+    document.getElementById("tb_line_cost").innerHTML = "$" + Math.round(line_cost) + "000";
+
+    actionStack.push({type:"finish_line", line: selected_line});
+    mode = "view";
+    new_transit_line_button.innerHTML = "New transit line";
+}
+
+function hideConfirmLineDialog() {
+    document.getElementById("confirm_line_modal").style.visibility = "hidden";
+}
 
 game_map.onload = function() {
     game_map_canvas.width = game_map.width;
@@ -384,22 +450,25 @@ game_map.onload = function() {
 // Simulation code
 function simulate() {
     let transit_trips = [];
-    for(let i = 0; i < 100; i++)  {
+    for(let i = 0; i < 250; i++)  {
         let commuter = commuters[Math.floor(Math.random() * commuters.length)];
         const trip = calculateTransitTrip(commuter.location, commuter.destination.location);
         transit_trips.push(trip);
     }
 
     let statistics = calculateTransitStatistics(transit_trips);
-    console.log(statistics);
+    showSimulationDialog(statistics);
     return statistics.averageTime;
 }
 
 function calculateTransitStatistics(trips) {
     const times = [];
     const walk_times = [];
+    const connections = [];
 
     const metro_line_usage = {};
+
+    let longest_trip;
 
     transit_lines.forEach(line => {
         metro_line_usage[line.name] = 0;
@@ -407,6 +476,9 @@ function calculateTransitStatistics(trips) {
 
     trips.forEach(trip => {
         const time = trip.calculateTotalDuration();
+
+        if(longest_trip == null || time > longest_trip.calculateTotalDuration()) longest_trip = trip;
+
         times.push(time);
 
         let walk_time = 0;
@@ -421,12 +493,22 @@ function calculateTransitStatistics(trips) {
             }
         });
         walk_times.push(walk_time);
+
+        let trip_connections = 0;
+        trip.steps.forEach(step => {
+            if(step.mode == "metro") trip_connections++;
+        });
+
+        if(trip_connections != 0) trip_connections--;
+        connections.push(trip_connections);
     });
     
     const averageTime = calculateAverage(times);
     const averageWalkTime = calculateAverage(walk_times);
+    const averageConnections = calculateAverage(connections);
 
-    return {averageTime: averageTime, averageWalkTime: averageWalkTime, lineUsage: metro_line_usage};
+    return {averageTime: averageTime, averageWalkTime: averageWalkTime, connections: averageConnections, 
+        lineUsage: metro_line_usage, longest_trip: longest_trip.calculateTotalDuration()};
 }
 
 function test_simulate() {

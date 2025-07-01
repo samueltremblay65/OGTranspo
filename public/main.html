@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OG Transpo</title>
 
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Kanit:ital,wght@0,200;0,400;0,700;1,100&display=swap" rel="stylesheet">
 </head>
 <body>
     <h1>OG Transpo</h1>
@@ -21,10 +22,42 @@
         <button class="game_button" id="btn_simulate">Simulate</button>
         <button class="game_button" id="btn_reset_map">Reset</button>
         <button class="game_button">Settings</button>
-        <button class="game_button" id="btn_view_coordinates">View coordinates</button>
         <button class="game_button" id="btn_zoom_out">-</button>
         <button class="game_button" id="btn_zoom_in">+</button>
+
+        <div class="modal" id="simulation_modal">
+            <h1>Transit Report</h1>
+            <div><h3 class="result">Average transit time: </h3><p class="result" id="tb_transit_time"></p></div>
+            <div><h3 class="result">Average transit walking time: </h3><p class="result" id="tb_transit_walking_time"></p></div>
+            <div><h3 class="result">Average transit connections: </h3><p class="result" id="tb_connections"></p></div>
+            <div><h3 class="result">Longest trip: </h3><p class="result" id="tb_longest"></p></div>
+            <div class="buttons">
+                <button id="btn_line_usage">View Metro Line Usage Statistics</button>
+                <button id="btn_close_simulation_modal">Exit</button>
+            </div>
+        </div>
+
+        <div class="modal" id="build_line_modal">
+            <h1>Build new transit line</h1>
+            <input type="text" placeholder="Line name" id="input_line_name">
+            <p>After planning the route, the cost estimation of the project will be calculated</p>
+            <div class="buttons">
+                <button id="btn_build_line_continue">Plan line</button>
+                <button id="btn_build_line_cancel">Cancel</button>
+            </div>
+        </div>
+
+        <div class="modal" id="confirm_line_modal">
+            <h1>Build cost</h1>
+            <div><h3 class="result">Total line cost: </h3><p class="result" id="tb_line_cost"></p></div>
+            <div class="buttons">
+                <button id="btn_confirm_line_continue">Accept proposal and build line</button>
+                <button id="btn_confirm_line_cancel">Reject proposal</button>
+            </div>
+        </div>
     </div>
+
+
     <canvas id="canvas" width="1500px" height="1000px"></canvas>
 </body>
     <!-- prettier-ignore -->

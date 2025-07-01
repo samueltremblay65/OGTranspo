@@ -74,7 +74,7 @@ class TransitLine {
   }
 
   removeStop(station) {
-    const index = this.stops.indexOf(station);
-    this.stops.splice(index, 1);
+    this.stops.splice(this.stops.indexOf(station), 1);
+    station.lines.splice(station.lines.indexOf(this));
   }
 }

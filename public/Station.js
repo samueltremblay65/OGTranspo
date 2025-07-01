@@ -47,12 +47,12 @@ class Station {
     }
 
     shortestTransitTrip(station) {
-        // All intelligent possible transit trips. Will filter by length later
-        const possible_trips = [];
+        let shortestTrip;
 
-        // If has direct connection, add shortest one to the list of possible trips
+        // If has direct connection, use shortest one as current shortest trip. 
+        // There may be a faster way that involves multiple trains
         if(this.sharesLine(station)) {
-            possible_trips.push(this.shortestDirectConnection(station));
+            shortestTrip = this.shortestDirectConnection(station);
         }
 
         // Queue for search
@@ -73,21 +73,28 @@ class Station {
             })
         });
 
-        // Search loop
+        // Search loop, breadth first approach is used
         while(queue.length > 0) {
             let trip = queue.pop();
 
+            // If the subtrip is already longer than the shortest option, abort search for this current trip start
+            if(shortestTrip != null) {
+                if(trip.calculateTotalDuration() > shortestTrip.calculateTotalDuration()) continue;
+            }
+
+            // Get the stop where we are currently during this subtrip
             const currentStop = trip.getLastStop();
 
+            // If this stop connects to the end station, we have a new possible trip. 
+            // Check to see if it is the shortest one yet
             if(currentStop.sharesLine(station)) {
                 trip = trip.combine(currentStop.shortestDirectConnection(station));
-                possible_trips.push(trip);
+                if(shortestTrip == null || trip.calculateTotalDuration() < shortestTrip.calculateTotalDuration()) shortestTrip = trip;
                 continue;
             }
 
             // If we do not have a direct connection to end station:
             // For each line served at this stop, enqueue a trip to each connection point on these lines
-
             currentStop.lines.forEach(line => {
                 const connectionPoints = line.getConnectionPoints();
 
@@ -101,19 +108,6 @@ class Station {
             });
         }
 
-        if(possible_trips.length == 0) return null;
-
-        let shortest = possible_trips[0];
-        let shortest_time = shortest.calculateTotalDuration();
-
-        possible_trips.forEach(trip => {
-            const duration = trip.calculateTotalDuration();
-            if(duration < shortest_time) {
-                shortest_time = duration;
-                shortest = trip;
-            }
-        });
-
-        return shortest;
+        return shortestTrip;
     }
 }

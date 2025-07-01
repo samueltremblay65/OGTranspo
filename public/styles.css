@@ -21,6 +21,10 @@ body, html {
     height: 100%;
     width: 100%;
     position: absolute;
+
+    font-family: "Kanit", sans-serif;
+    font-weight: 400;
+    font-style: normal;
 }
 
 body {
@@ -42,4 +46,44 @@ canvas {
 .game_button {
     margin-block: 5px;
     margin-inline-start: 5px;
+    border-radius: 3px;
+    border: 1px solid black;
+
+}
+
+.result {
+    display: inline;
+}
+
+button {
+    font-family: inherit;
+}
+
+button:active {
+    transform: scale(1.04);
+}
+
+button:hover {
+    border: 1px solid orange;
+}
+
+h1, h2, h3, p {
+    margin: 0;
+}
+
+.modal {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgb(255, 255, 255);
+    z-index: 2;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid orange;
+    border-radius: 20px;
+    visibility: hidden;
+    overflow: visible;
+    text-align: left;
+    width: 500px;
 }
