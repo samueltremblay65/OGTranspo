@@ -1,3 +1,7 @@
+:root {
+    --red: #e05e5e;
+}
+
 
 #map {
     height: 500px;
@@ -46,9 +50,6 @@ canvas {
 .game_button {
     margin-block: 5px;
     margin-inline-start: 5px;
-    border-radius: 3px;
-    border: 1px solid black;
-
 }
 
 .result {
@@ -57,6 +58,8 @@ canvas {
 
 button {
     font-family: inherit;
+    border: 1px solid black;
+    border-radius: 3px;
 }
 
 button:active {
@@ -83,7 +86,38 @@ h1, h2, h3, p {
     border: 1px solid orange;
     border-radius: 20px;
     visibility: hidden;
-    overflow: visible;
     text-align: left;
     width: 500px;
+}
+
+.fixed_modal {
+    position: fixed;
+    background-color: rgb(255, 255, 255);
+    z-index: 2;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid orange;
+    border-radius: 20px;
+    text-align: left;
+    width: 200px;
+    left: 0px;
+    top: 0px;
+    font-size: x-small;
+    visibility: hidden;
+}
+
+.fixed_modal h3, .fixed_modal button, .fixed_modal p {
+    width: 100%;
+}
+
+.fixed_modal button {
+    margin-block-start: 5px;
+}
+
+.red {
+    background-color: var(--red);
+}
+
+#station_quick_menu {
+    text-align: center;
 }
