@@ -21,6 +21,10 @@ let mode = "view";
 let location_viewing = false;
 let transit_density_map = false;
 
+let selected_line = null;
+let color = 0;
+const LINE_COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'brown', 'grey', ""];
+
 // Drawing functions
 function drawBackground() {
     ctx.drawImage(game_map, center.x, center.y, 1500 / scaling, 1000 / scaling, 0, 0, canvas.width, canvas.height);
@@ -301,11 +305,11 @@ document.getElementById("btn_build_line_continue").addEventListener("click", fun
     let line_name = document.getElementById("input_line_name").value;
 
     if(line_name == null || line_name.length == 0) line_name = "Line " + (transit_lines.length + 1);
-    let new_line = new TransitLine(line_name, COLORS[color % COLORS.length], TRAIN_SPEED, STOP_TIME);
+    let new_line = new TransitLine(line_name, LINE_COLORS[color % LINE_COLORS.length], TRAIN_SPEED, STOP_TIME);
     transit_lines.push(new_line);
     selected_line = new_line;
     actionStack.push({type: "add_line", target: new_line, color: color});
-    color = color + 1 % COLORS.length;
+    color = color + 1 % LINE_COLORS.length;
     hideBuildLineDialog();
 });
 
@@ -317,10 +321,6 @@ reset_map_button.addEventListener("click", (e) => {
     stations.splice(0, stations.length);
 });
 
-// Add new transit line
-let selected_line = null;
-let color = 0;
-const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'brown', 'grey', ""];
 const new_transit_line_button = document.getElementById("btn_new_transit_line");
 new_transit_line_button.addEventListener("click", (e) => {
     e.stopImmediatePropagation();
