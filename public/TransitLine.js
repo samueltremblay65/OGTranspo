@@ -73,8 +73,13 @@ class TransitLine {
     station.addLine(this);
   }
 
+  restoreStop(station, index) {
+    this.stops.splice(index, 0, station);
+  }
+
   removeStop(station) {
-    this.stops.splice(this.stops.indexOf(station), 1);
-    station.lines.splice(station.lines.indexOf(this));
+    const index = this.stops.indexOf(station);
+    this.stops.splice(index, 1);
+    return index;
   }
 }

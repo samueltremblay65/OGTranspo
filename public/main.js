@@ -7,7 +7,7 @@ game_map.src = "map.png";
 
 const game_map_canvas = document.createElement('canvas');
 
-let scaling = 2.2;
+let scaling = 1.4;
 
 let center = {x: 800, y: 500};
 
@@ -21,9 +21,15 @@ let mode = "view";
 let location_viewing = false;
 let transit_density_map = false;
 
+let selectedStation = null;
+
+let selected_line = null;
+let color = 0;
+const LINE_COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'brown', 'grey', ""];
+
 // Drawing functions
 function drawBackground() {
-    ctx.drawImage(game_map, center.x, center.y, 1500 / scaling, 1000 / scaling, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(game_map, center.x, center.y, canvas.width / scaling, canvas.height / scaling, 0, 0, canvas.width, canvas.height);
 }
 
 function drawTransitLines() {
@@ -35,7 +41,7 @@ function drawTransitLines() {
 function drawTransitLine(line) {
     if(line.stops.length > 1) {
         // Draw path to connect stations
-        ctx.lineWidth = 10;
+        ctx.lineWidth = 6;
         ctx.strokeStyle = line.color;
         ctx.beginPath();
 
@@ -53,7 +59,7 @@ function drawTransitLine(line) {
     line.stops.forEach((stop) => {
         const canvas_location = convertToCanvasCoordinates(stop.location);
         ctx.beginPath();
-        ctx.arc(canvas_location.x, canvas_location.y, 8, 0, 2 * Math.PI);
+        ctx.arc(canvas_location.x, canvas_location.y, 5, 0, 2 * Math.PI);
         ctx.fill();
     });
 }
@@ -66,7 +72,7 @@ function showCommuters() {
 
         const canvas_location = convertToCanvasCoordinates(commuter.location);
         ctx.beginPath();
-        ctx.arc(canvas_location.x, canvas_location.y, 5, 0, 2 * Math.PI);
+        ctx.arc(canvas_location.x, canvas_location.y, 3, 0, 2 * Math.PI);
         ctx.stroke();
     });
 }
@@ -107,11 +113,23 @@ function addStop(location) {
         }
     }
 
-    const station = new Station("station " + stations.length, location);
+    const station = new Station("Station " + (stations.length + 1), location);
     stations.push(station);
     selected_line.addStop(station);
     
     actionStack.push({type:"add_station", line: selected_line, station: station});
+}
+
+function removeStation(station) {
+    stations.splice(stations.indexOf(station), 1);
+
+    const line_indexes = [];
+    station.lines.forEach(line => {
+        const index = line.removeStop(station);
+        line_indexes.push({line: line, index: index});
+    });
+
+    actionStack.push({type:"remove_station", station: selectedStation, line_indexes: line_indexes});
 }
 
 function undoAction(action) {
@@ -119,9 +137,11 @@ function undoAction(action) {
         const index = stations.indexOf(action.station);
         stations.splice(index, 1);
         action.line.removeStop(action.station);
+        action.station.lines.splice(action.station.lines.indexOf(action.line), 1);
     }
     else if(action.type == "add_stop") {
         action.line.removeStop(action.station);
+        action.station.lines.splice(action.station.lines.indexOf(action.line), 1);
     }
     else if(action.type == "add_line") {
         const index = transit_lines.indexOf(action.line);
@@ -135,6 +155,17 @@ function undoAction(action) {
         mode = "build";
         selected_line = action.line;
         new_transit_line_button.innerHTML = "Finish construction"
+    }
+    else if(action.type == "remove_station") {
+        mode = "view";
+        stations.push(action.station);
+        action.line_indexes.forEach(element => {
+            const line = element.line;
+            const index = element.index;
+
+            action.station.lines.push(line);
+            line.restoreStop(action.station, index);
+        });
     }
 }
 
@@ -275,7 +306,7 @@ function getMousePos(canvas, evt) {
 
 document.getElementById("btn_zoom_out").addEventListener("click", (e) => {
     e.stopImmediatePropagation();
-    if(scaling > 1) scaling -= 0.2;
+    if(scaling > 0.8) scaling -= 0.2;
 });
 
 document.getElementById("btn_zoom_in").addEventListener("click", (e) => {
@@ -301,12 +332,23 @@ document.getElementById("btn_build_line_continue").addEventListener("click", fun
     let line_name = document.getElementById("input_line_name").value;
 
     if(line_name == null || line_name.length == 0) line_name = "Line " + (transit_lines.length + 1);
-    let new_line = new TransitLine(line_name, COLORS[color % COLORS.length], TRAIN_SPEED, STOP_TIME);
+    let new_line = new TransitLine(line_name, LINE_COLORS[color % LINE_COLORS.length], TRAIN_SPEED, STOP_TIME);
     transit_lines.push(new_line);
     selected_line = new_line;
     actionStack.push({type: "add_line", target: new_line, color: color});
-    color = color + 1 % COLORS.length;
+    color = color + 1 % LINE_COLORS.length;
     hideBuildLineDialog();
+    mode = "build";
+    new_transit_line_button.innerHTML = "Finish construction";
+});
+
+document.getElementById("btn_build_line_cancel").addEventListener("click", function(e) {
+    e.stopImmediatePropagation();
+    hideBuildLineDialog();
+});
+
+document.getElementById("station_quick_menu").addEventListener("click", function(e) {
+    e.stopImmediatePropagation();
 });
 
 // Clear all construction
@@ -317,10 +359,6 @@ reset_map_button.addEventListener("click", (e) => {
     stations.splice(0, stations.length);
 });
 
-// Add new transit line
-let selected_line = null;
-let color = 0;
-const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'brown', 'grey', ""];
 const new_transit_line_button = document.getElementById("btn_new_transit_line");
 new_transit_line_button.addEventListener("click", (e) => {
     e.stopImmediatePropagation();
@@ -343,6 +381,15 @@ game_container.addEventListener("click", (e) => {
     if(location_viewing) {
         console.log(game_location);
         console.log(getGameMapColor(game_location));
+    }
+
+    hideStationQuickMenu();
+
+    if(mode == "view") {
+        stations.forEach(station => {
+            if(game_location.distanceTo(station.location) < 50 / M_PER_PIXEL) {
+                showStationQuickMenu(canvas_location, station);            }
+        });
     }
 
     if(mode == "build") {
@@ -370,6 +417,11 @@ document.getElementById("btn_confirm_line_cancel").addEventListener("click", fun
     hideConfirmLineDialog();
 });
 
+document.getElementById("station_quick_remove").addEventListener("click", function() {
+    removeStation(selectedStation);
+    hideStationQuickMenu();
+});
+
 function showSimulationDialog(statistics) {
     document.getElementById("simulation_modal").style.visibility = "visible";
     let minutes = Math.round(statistics.averageTime / 60);
@@ -393,15 +445,13 @@ function showBuildLineDialog() {
 
 function hideBuildLineDialog() {
     document.getElementById("build_line_modal").style.visibility = "hidden";
-    mode = "build";
-    new_transit_line_button.innerHTML = "Finish construction";
 }
 
 function showConfirmLineDialog() {
     document.getElementById("confirm_line_modal").style.visibility = "visible";
 
     const line_cost = calculateLineCost(selected_line);
-    document.getElementById("tb_line_cost").innerHTML = "$" + Math.round(line_cost) + "000";
+    document.getElementById("tb_line_cost").innerHTML = format_cost(line_cost);
 
     actionStack.push({type:"finish_line", line: selected_line});
     mode = "view";
@@ -410,6 +460,35 @@ function showConfirmLineDialog() {
 
 function hideConfirmLineDialog() {
     document.getElementById("confirm_line_modal").style.visibility = "hidden";
+}
+
+function showStationQuickMenu(location, station) {
+    selectedStation = station;
+    const quickStationMenu = document.getElementById("station_quick_menu");
+
+    document.getElementById("station_quick_tb_name").innerHTML = station.name;
+    
+    quickStationMenu.style.visibility = "visible";
+
+    if(location.y < canvas.height / 3) {
+        quickStationMenu.style.top = (location.y + 20) + "px";
+    }
+    else {
+        quickStationMenu.style.top = (location.y - 200) + "px";
+    }
+
+    let x = Math.max(20, location.x - 100);
+    x = Math.min(canvas.width - 20 - quickStationMenu.clientWidth, x);
+
+    quickStationMenu.style.left = x + "px";
+}
+
+function hideStationQuickMenu() {
+    const quickStationMenu = document.getElementById("station_quick_menu");
+    
+    quickStationMenu.style.visibility = "hidden";
+
+    selectedStation = null;
 }
 
 game_map.onload = function() {
@@ -587,3 +666,6 @@ function getGameMapColor(location) {
     else return pixel_data;
 }
 
+function format_cost(cost) {
+    return (new Intl.NumberFormat("en-CA", {style: "currency", currency: "CAD"}).format(Math.round(cost) * 1000));
+}
