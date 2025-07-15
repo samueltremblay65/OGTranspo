@@ -52,6 +52,22 @@ canvas {
     margin-inline-start: 5px;
 }
 
+input {
+    font-family: inherit;
+    border: 1px solid black;
+    border-radius: 10px;
+    -moz-outline-radius: 10px;
+    box-sizing: border-box;
+    padding-inline: 5px;
+    width: 100%;
+    margin-top: 0;
+}
+
+input:hover, input:active, :focus-visible {
+    border: 1px solid orange;
+    outline: none;
+}
+
 .result {
     display: inline;
 }
@@ -119,5 +135,11 @@ h1, h2, h3, p {
 }
 
 #station_quick_menu {
+    text-align: center;
+}
+
+#station_quick_rename_input {
+    visibility: hidden;
+    display: none;
     text-align: center;
 }

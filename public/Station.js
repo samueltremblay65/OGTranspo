@@ -80,6 +80,7 @@ class Station {
             // If the subtrip is already longer than the shortest option, abort search for this current trip start
             if(shortestTrip != null) {
                 if(trip.calculateTotalDuration() > shortestTrip.calculateTotalDuration()) continue;
+                if(trip.steps.length > 5) continue;
             }
 
             // Get the stop where we are currently during this subtrip
