@@ -17,14 +17,16 @@
     <div id="map_container">
         <!-- <div id="map"></div> -->
         <button class="game_button" id="btn_new_transit_line">New Transit Line</button>
-        <button class="game_button" id="btn_view_transit_line">View Transit Lines</button>
+<!--         <button class="game_button" id="btn_view_transit_line">Manage Transit System</button> -->
         <button class="game_button" id="btn_transit_density">Commuter Map</button>
-        <button class="game_button" id="btn_neighborhoods">View neighborhoods</button>
+<!--         <button class="game_button" id="btn_neighborhoods">View neighborhoods</button> -->
         <button class="game_button" id="btn_simulate">Simulate</button>
         <button class="game_button" id="btn_reset_map">Reset</button>
         <button class="game_button">Settings</button>
         <button class="game_button" id="btn_zoom_out">-</button>
         <button class="game_button" id="btn_zoom_in">+</button>
+
+        <div class="ui_bottom"><h3 class="result">Budget: </h3><p class="result" id="budget"></p></div>
 
         <div class="modal" id="simulation_modal">
             <h1>Transit Report</h1>
@@ -54,6 +56,14 @@
             <div class="buttons">
                 <button id="btn_confirm_line_continue">Accept proposal and build line</button>
                 <button id="btn_confirm_line_cancel">Reject proposal</button>
+            </div>
+        </div>
+
+        <div class="modal" id="budget_alert_modal">
+            <h1>Budget Alert</h1>
+            <p>Your current transit system is over budget</p>
+            <div class="buttons">
+                <button id="btn_budget_alert_dismiss">Dismiss</button>
             </div>
         </div>
 

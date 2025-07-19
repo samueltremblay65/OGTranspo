@@ -190,9 +190,7 @@ function calculateLineCost(line) {
 function calculateTotaCost() {
     let cost = 0;
     transit_lines.forEach((line) => cost += calculateLineCost(line));
-    
-    money = STARTING_BUDGET - cost;
-    return money;
+    return cost;
 }
 
 // Transit simulation functions
@@ -304,7 +302,7 @@ function getMousePos(canvas, evt) {
 
 document.getElementById("btn_zoom_out").addEventListener("click", (e) => {
     e.stopImmediatePropagation();
-    if(scaling > 0.8) scaling -= 0.2;
+    if(scaling > 0.6) scaling -= 0.2;
 });
 
 document.getElementById("btn_zoom_in").addEventListener("click", (e) => {
@@ -360,7 +358,7 @@ reset_map_button.addEventListener("click", (e) => {
     setBuildButtonText("view");
     hideInformationMenus();
     hideConfirmLineDialog();
-
+    updateBudgetDisplay(STARTING_BUDGET);
 });
 
 const new_transit_line_button = document.getElementById("btn_new_transit_line");
@@ -413,7 +411,15 @@ document.getElementById("btn_confirm_line_continue").addEventListener("click", f
     actionStack.push({type:"finish_line", line: selected_line});
     mode = "view";
     setBuildButtonText("view");
+
+    const total_cost = calculateTotaCost();
+
+    const budget_remaining = STARTING_BUDGET - total_cost;
+
+    updateBudgetDisplay(budget_remaining);
     hideConfirmLineDialog();
+
+    if(budget_remaining < 0) showBudgetAlert();
 });
 
 document.getElementById("btn_confirm_line_cancel").addEventListener("click", function() {
@@ -441,6 +447,11 @@ document.getElementById("station_quick_remove").addEventListener("click", functi
     removeStation(selectedStation);
     hideStationQuickMenu();
 });
+
+document.getElementById("btn_budget_alert_dismiss").addEventListener("click", function() {
+    mode = "view";
+    document.getElementById("budget_alert_modal").style.visibility = "hidden";
+})
 
 function station_quick_showRename() {
     const rename_input = document.getElementById("station_quick_rename_input");
@@ -512,6 +523,15 @@ function hideConfirmLineDialog() {
     document.getElementById("confirm_line_modal").style.visibility = "hidden";
 }
 
+function updateBudgetDisplay(remaining) {
+    document.getElementById("budget").innerHTML = format_cost(remaining);
+}
+
+function showBudgetAlert() {
+    mode = "budget_alert";
+    document.getElementById("budget_alert_modal").style.visibility = "visible";
+}
+
 function showStationQuickMenu(location, station) {
     mode = "station_quick_menu";
     selectedStation = station;
@@ -567,20 +587,13 @@ game_map.onload = function() {
     // Simulation set up
     populateNeighborhood();
 
+    // UI Setup
+    updateBudgetDisplay(STARTING_BUDGET);
+
     // GameLoop
     setInterval(function() {
-        // Controls loop for map movement
-        if(controls.up) center.y -= MAP_SPEED;
-        if(controls.down) center.y += MAP_SPEED;
-        if(controls.left) center.x -= MAP_SPEED;
-        if(controls.right) center.x += MAP_SPEED;
-
-        if(center.x < 0) center.x = 0;
-        if(center.y < 0) center.y = 0;
-        
-        if(center.x + canvas.width / scaling > game_map.width) center.x = game_map.width - canvas.width / scaling;
-        if(center.y + canvas.height / scaling > game_map.height) center.y = game_map.height - canvas.height / scaling;
-        
+        // Handle map movement controls
+        mapControls();
         // Draw
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawBackground();
@@ -592,6 +605,27 @@ game_map.onload = function() {
         }
 
     }, 1000 / FPS);
+}
+
+function mapControls() {
+    // Controls loop for map movement
+    if(isMenuOpen()) return;
+
+    if(controls.up) center.y -= MAP_SPEED;
+    if(controls.down) center.y += MAP_SPEED;
+    if(controls.left) center.x -= MAP_SPEED;
+    if(controls.right) center.x += MAP_SPEED;
+
+    if(center.x < 0) center.x = 0;
+    if(center.y < 0) center.y = 0;
+    
+    if(center.x + canvas.width / scaling > game_map.width) center.x = game_map.width - canvas.width / scaling;
+    if(center.y + canvas.height / scaling > game_map.height) center.y = game_map.height - canvas.height / scaling;
+}
+
+function isMenuOpen() {
+    if(mode == "build" || mode == "view") return false;
+    return true;
 }
 
 // Simulation code
