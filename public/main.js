@@ -525,6 +525,19 @@ function hideConfirmLineDialog() {
 
 function updateBudgetDisplay(remaining) {
     document.getElementById("budget").innerHTML = format_cost(remaining);
+
+    const budget_ui = document.getElementById("budget_bar");
+
+    budget_ui.style.background = "#ebffde";
+    budget_ui.style.borderColor = "#a4c78d";
+
+    if(remaining < 0) {
+        budget_ui.style.background = "#f5a9a9";
+        budget_ui.style.borderColor = "#bd0000"
+    }else if(remaining < STARTING_BUDGET / 3) {
+        budget_ui.style.background = "#ffec96";
+        budget_ui.style.borderColor = "#dbba25";
+    }
 }
 
 function showBudgetAlert() {
