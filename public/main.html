@@ -13,7 +13,7 @@
 </head>
 <body>
     <h1>OG Transpo</h1>
-    <h3>Fix the Ottawa Public Transit System</h3>
+    <h3>Design the Ottawa Public Transit System</h3>
     <div id="map_container">
         <!-- <div id="map"></div> -->
         <button class="game_button" id="btn_new_transit_line">New Transit Line</button>
@@ -26,7 +26,7 @@
         <button class="game_button" id="btn_zoom_out">-</button>
         <button class="game_button" id="btn_zoom_in">+</button>
 
-        <div class="ui_bottom"><h3 class="result">Budget: </h3><p class="result" id="budget"></p></div>
+        <div class="ui_bottom" id="budget_bar"><h3 class="result">Budget: </h3><p class="result" id="budget"></p></div>
 
         <div class="modal" id="simulation_modal">
             <h1>Transit Report</h1>
@@ -34,6 +34,7 @@
             <div><h3 class="result">Average transit walking time: </h3><p class="result" id="tb_transit_walking_time"></p></div>
             <div><h3 class="result">Average transit connections: </h3><p class="result" id="tb_connections"></p></div>
             <div><h3 class="result">Longest trip: </h3><p class="result" id="tb_longest"></p></div>
+            <div><h3 class="result">Percentage of trips made via transit: </h3><p class="result" id="tb_transit_percentage"></p></div>
             <div class="buttons">
                 <button id="btn_line_usage">View Metro Line Usage Statistics</button>
                 <button id="btn_close_simulation_modal">Exit</button>
