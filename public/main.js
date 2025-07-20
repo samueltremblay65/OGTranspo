@@ -27,6 +27,8 @@ let selected_line = null;
 let color = 0;
 const LINE_COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'brown', 'grey', "lime"];
 
+let displayed_trip = null;
+
 // Drawing functions
 function drawBackground() {
     ctx.drawImage(game_map, center.x, center.y, canvas.width / scaling, canvas.height / scaling, 0, 0, canvas.width, canvas.height);
@@ -64,14 +66,54 @@ function drawTransitLine(line) {
     });
 }
 
+function drawDisplayedTrip() {
+    if(displayed_trip == null) return;
+    displayed_trip.steps.forEach(step => {
+        ctx.strokeStyle = "#7efcb9";
+        ctx.lineWidth = 8;
+        ctx.lineCap = "round";
+        ctx.setLineDash([15, 15]);
+
+        ctx.beginPath();
+
+        let start;
+        let end;
+
+        if(step.start instanceof Station) {
+            start = convertToCanvasCoordinates(step.start.location);
+        }
+        else if (step.start instanceof Point) {
+            start = convertToCanvasCoordinates(step.start);
+        }
+
+        if(step.end instanceof Station) {
+            end = convertToCanvasCoordinates(step.end.location);
+        }
+        else if (step.end instanceof Point) {
+            end = convertToCanvasCoordinates(step.end);
+        }
+
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+    });
+
+    ctx.setLineDash([]);
+}
+
+function displayTransitTrip(trip) {
+    displayed_trip = trip;
+}
+
 function showCommuters() {
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 2;
     ctx.strokeStyle = "black";
     commuters.forEach((commuter) => {
         if(!isOnScreen(commuter.location)) return;
 
         const canvas_location = convertToCanvasCoordinates(commuter.location);
         ctx.beginPath();
+        ctx.strokeStyle = "#8e8e8eff";
         ctx.arc(canvas_location.x, canvas_location.y, 3, 0, 2 * Math.PI);
         ctx.stroke();
     });
@@ -491,7 +533,9 @@ function showSimulationDialog(statistics) {
 
     document.getElementById("tb_connections").innerHTML = statistics.connections + " transfers";
 
-    document.getElementById("tb_longest").innerHTML = Math.round(statistics.longest_trip / 60) + " minutes";
+    document.getElementById("tb_longest").innerHTML = Math.round(statistics.longest_trip.calculateTotalDuration() / 60) + " minutes";
+
+    document.getElementById("tb_transit_percentage").innerHTML = statistics.transit_trip_percentage + "%";
 }
 
 function hideSimulationDialog() {
@@ -611,6 +655,7 @@ game_map.onload = function() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawBackground();
         drawTransitLines();
+        drawDisplayedTrip();
 
         // Show commuters
         if(transit_density_map) {
@@ -662,6 +707,9 @@ function calculateTransitStatistics(trips) {
 
     const metro_line_usage = {};
 
+    let walking_trips = 0;
+    let transit_trips = 0;
+
     let longest_trip;
 
     transit_lines.forEach(line => {
@@ -695,14 +743,24 @@ function calculateTransitStatistics(trips) {
 
         if(trip_connections != 0) trip_connections--;
         connections.push(trip_connections);
+
+        // Determine percentage of walking vs transit trips
+        let isWalking = true;
+        trip.steps.forEach(step => {
+            if(step.mode != "walk") isWalking = false;
+        });
+
+        if(isWalking) walking_trips++; else transit_trips++;
     });
     
     const averageTime = calculateAverage(times);
     const averageWalkTime = calculateAverage(walk_times);
     const averageConnections = calculateAverage(connections);
 
+    const transit_trip_percentage = 100 * transit_trips / trips.length;
+
     return {averageTime: averageTime, averageWalkTime: averageWalkTime, connections: averageConnections, 
-        lineUsage: metro_line_usage, longest_trip: longest_trip.calculateTotalDuration()};
+        lineUsage: metro_line_usage, longest_trip: longest_trip, transit_trip_percentage: transit_trip_percentage};
 }
 
 function test_simulate() {
