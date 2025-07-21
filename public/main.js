@@ -354,6 +354,38 @@ function getMousePos(canvas, evt) {
     };
 }
 
+function showMenuBarButtons(menu_mode) {
+    switch(menu_mode){
+        case "view":
+            document.getElementById("btn_new_transit_line").style.display = "inline";
+            document.getElementById("btn_transit_density").style.display = "inline";
+            document.getElementById("btn_simulate").style.display = "inline";
+            document.getElementById("btn_reset_map").style.display = "inline";
+            document.getElementById("btn_settings").style.display = "inline";
+            document.getElementById("btn_zoom_out").style.display = "inline";
+            document.getElementById("btn_zoom_in").style.display = "inline";
+            break;
+        case "build":
+            document.getElementById("btn_new_transit_line").style.display = "inline";
+            document.getElementById("btn_transit_density").style.display = "inline";
+            document.getElementById("btn_simulate").style.display = "none";
+            document.getElementById("btn_reset_map").style.display = "inline";
+            document.getElementById("btn_settings").style.display = "inline";
+            document.getElementById("btn_zoom_out").style.display = "inline";
+            document.getElementById("btn_zoom_in").style.display = "inline";
+            break;
+        case "modal":
+            document.getElementById("btn_new_transit_line").style.display = "none";
+            document.getElementById("btn_transit_density").style.display = "none";
+            document.getElementById("btn_simulate").style.display = "none";
+            document.getElementById("btn_reset_map").style.display = "none";
+            document.getElementById("btn_settings").style.display = "inline";
+            document.getElementById("btn_zoom_out").style.display = "none";
+            document.getElementById("btn_zoom_in").style.display = "none";
+            break;
+    }
+}
+
 document.getElementById("btn_zoom_out").addEventListener("click", (e) => {
     e.stopImmediatePropagation();
     if(scaling > 0.6) scaling -= 0.2;
@@ -373,7 +405,7 @@ document.getElementById("btn_transit_density").addEventListener("click", (e) => 
 document.getElementById("btn_simulate").addEventListener("click", (e) => {
     e.stopImmediatePropagation();
     if(mode != "view") return;
-
+    hideInformationMenus();
     simulate();
 });
 
@@ -389,6 +421,7 @@ document.getElementById("btn_build_line_continue").addEventListener("click", fun
     color = color + 1 % LINE_COLORS.length;
     hideBuildLineDialog();
     mode = "build";
+    showMenuBarButtons("build");
     setBuildButtonText("build");
 });
 
@@ -396,6 +429,7 @@ document.getElementById("btn_build_line_cancel").addEventListener("click", funct
     e.stopImmediatePropagation();
     hideBuildLineDialog();
     mode = "view";
+    showMenuBarButtons("view");
 });
 
 document.getElementById("station_quick_menu").addEventListener("click", function(e) {
@@ -409,6 +443,7 @@ reset_map_button.addEventListener("click", (e) => {
     transit_lines.splice(0, transit_lines.length);
     stations.splice(0, stations.length);
     mode = "view";
+    showMenuBarButtons("view");
     setBuildButtonText("view");
     hideInformationMenus();
     hideConfirmLineDialog();
@@ -464,6 +499,7 @@ document.getElementById("btn_close_simulation_modal").addEventListener("click", 
 document.getElementById("btn_confirm_line_continue").addEventListener("click", function() {
     actionStack.push({type:"finish_line", line: selected_line});
     mode = "view";
+    showMenuBarButtons("view");
     setBuildButtonText("view");
 
     const total_cost = calculateTotaCost();
@@ -482,8 +518,9 @@ document.getElementById("btn_confirm_line_cancel").addEventListener("click", fun
         action = actionStack.pop();
         undoAction(action);
     }while(action.type != "add_line");
-    mode = "view";
 
+    mode = "view";
+    showMenuBarButtons("view");
     setBuildButtonText("view");
     hideConfirmLineDialog();
 });
@@ -504,6 +541,7 @@ document.getElementById("station_quick_remove").addEventListener("click", functi
 
 document.getElementById("btn_budget_alert_dismiss").addEventListener("click", function() {
     mode = "view";
+    showMenuBarButtons("view");
     document.getElementById("budget_alert_modal").style.visibility = "hidden";
 })
 
@@ -536,6 +574,8 @@ function station_quick_rename() {
 
 function showSimulationDialog(statistics) {
     mode = "statistics_menu";
+    showMenuBarButtons("modal");
+
     document.getElementById("simulation_modal").style.visibility = "visible";
     let minutes = Math.round(statistics.averageTime / 60);
     document.getElementById("tb_transit_time").innerHTML = minutes + " minutes";
@@ -552,11 +592,13 @@ function showSimulationDialog(statistics) {
 
 function hideSimulationDialog() {
     mode = "view";
+    showMenuBarButtons("view");
     document.getElementById("simulation_modal").style.visibility = "hidden";
 }
 
 function showBuildLineDialog() {
     mode = "build_menu";
+    showMenuBarButtons("modal");
     document.getElementById("build_line_modal").style.visibility = "visible";
 }
 
@@ -572,6 +614,7 @@ function showConfirmLineDialog() {
 
     actionStack.push({type:"finish_line", line: selected_line});
     mode = "confirm_line_menu";
+    showMenuBarButtons("modal");
     setBuildButtonText("view");
 }
 
@@ -598,11 +641,13 @@ function updateBudgetDisplay(remaining) {
 
 function showBudgetAlert() {
     mode = "budget_alert";
+    showMenuBarButtons("modal");
     document.getElementById("budget_alert_modal").style.visibility = "visible";
 }
 
 function showStationQuickMenu(location, station) {
     mode = "station_quick_menu";
+    showMenuBarButtons("view");
     selectedStation = station;
     const quickStationMenu = document.getElementById("station_quick_menu");
 
@@ -629,6 +674,7 @@ function showStationQuickMenu(location, station) {
 
 function hideStationQuickMenu() {
     mode = "view";
+    showMenuBarButtons("view");
     const quickStationMenu = document.getElementById("station_quick_menu");
     
     quickStationMenu.style.visibility = "hidden";
@@ -646,6 +692,7 @@ function hideStationQuickMenu() {
 
 function hideInformationMenus() {
     hideSimulationDialog();
+    hideStationQuickMenu();
 }
 
 game_map.onload = function() {
