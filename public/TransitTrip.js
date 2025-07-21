@@ -9,7 +9,18 @@ class TransitTrip {
         this.steps.forEach(step => {
             if(step.mode == "walk") time += step.walk_time;
             if(step.mode == "metro") time += step.line.calculateJourneyTime(step.start, step.end);
+            time += TRANSFER_TIME;
         });
+        return time;
+    }
+
+    calculateIntermediateDuration(step) {
+        let i = 0;
+        let time = 0;
+        do {
+            if(this.steps[i].mode == "walk") time += this.steps[i].walk_time;
+            if(this.steps[i].mode == "metro") time += this.steps[i].line.calculateJourneyTime(this.steps[i].start, this.steps[i].end);
+        } while(this.steps[i++] != step)
         return time;
     }
 
@@ -36,22 +47,6 @@ class TransitTrip {
 
     getLastStop() {
         return this.steps[this.steps.length - 1].end;
-    }
-
-    combine(trip) {
-        const new_trip = new TransitTrip(this.steps);
-        trip.steps.forEach(step => {
-            new_trip.steps.push(step);
-        });
-        new_trip.visited = this.visited;
-        return new_trip;
-    }
-
-    branch(step) {
-        const new_trip = new TransitTrip(this.steps);
-        new_trip.steps.push(step);
-        new_trip.visited = this.visited;
-        return new_trip;
     }
 
     print() {

@@ -70,32 +70,44 @@ function drawDisplayedTrip() {
     if(displayed_trip == null) return;
     displayed_trip.steps.forEach(step => {
         ctx.strokeStyle = "#7efcb9";
-        ctx.lineWidth = 8;
+        ctx.lineWidth = 6;
         ctx.lineCap = "round";
-        ctx.setLineDash([15, 15]);
+        ctx.setLineDash([10]);
 
         ctx.beginPath();
 
         let start;
         let end;
 
-        if(step.start instanceof Station) {
-            start = convertToCanvasCoordinates(step.start.location);
-        }
-        else if (step.start instanceof Point) {
-            start = convertToCanvasCoordinates(step.start);
-        }
+        if(step.mode == "metro") {
+            const stops = step.line.getStopsBetween(step.start, step.end);
 
-        if(step.end instanceof Station) {
-            end = convertToCanvasCoordinates(step.end.location);
-        }
-        else if (step.end instanceof Point) {
-            end = convertToCanvasCoordinates(step.end);
-        }
+            ctx.moveTo(start.location.x, start.location.y);
 
-        ctx.moveTo(start.x, start.y);
-        ctx.lineTo(end.x, end.y);
-        ctx.stroke();
+            stops.forEach(stop => {
+                const location = convertToCanvasCoordinates(stop.location);
+                ctx.lineTo(location.x, location.y);
+            });
+        }
+        else {
+            if(step.start instanceof Station) {
+                start = convertToCanvasCoordinates(step.start.location);
+            }
+            else if (step.start instanceof Point) {
+                start = convertToCanvasCoordinates(step.start);
+            }
+
+            if(step.end instanceof Station) {
+                end = convertToCanvasCoordinates(step.end.location);
+            }
+            else if (step.end instanceof Point) {
+                end = convertToCanvasCoordinates(step.end);
+            }
+
+            ctx.moveTo(start.x, start.y);
+            ctx.lineTo(end.x, end.y);
+            ctx.stroke();
+        }
     });
 
     ctx.setLineDash([]);
@@ -654,13 +666,9 @@ game_map.onload = function() {
         // Draw
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawBackground();
+        if(transit_density_map) showCommuters();
         drawTransitLines();
         drawDisplayedTrip();
-
-        // Show commuters
-        if(transit_density_map) {
-            showCommuters();
-        }
 
     }, 1000 / FPS);
 }
@@ -697,6 +705,7 @@ function simulate() {
 
     let statistics = calculateTransitStatistics(transit_trips);
     showSimulationDialog(statistics);
+    // displayTransitTrip(statistics.longest_trip);
     return statistics.averageTime;
 }
 

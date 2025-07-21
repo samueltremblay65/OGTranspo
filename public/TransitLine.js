@@ -64,6 +64,26 @@ class TransitLine {
     return visited;
   }
 
+  getStopsBetween(station1, station2) {
+    if(station1 == station2) return [station1];
+
+    let direction = 1;
+    let index1 = this.stops.indexOf(station1);
+    let index2 = this.stops.indexOf(station2);
+
+    if(index2 < index1) direction = -1;
+
+    const stops = [];
+
+    let i = index1 + 1;
+    do {
+      stops.push(stops[i]);
+      i += direction;
+    }while(index1 != index2)
+
+    return stops;
+  }
+
   calculateTrainTime(distance) {
     return distance * 8 / this.train_speed;
   }
