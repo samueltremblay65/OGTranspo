@@ -48,10 +48,4 @@ class TransitTrip {
     getLastStop() {
         return this.steps[this.steps.length - 1].end;
     }
-
-    print() {
-        this.steps.forEach(step => {
-            step.print();
-        });
-    }
 }

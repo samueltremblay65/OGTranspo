@@ -22,12 +22,11 @@ let location_viewing = false;
 let transit_density_map = false;
 
 let selectedStation = null;
+let selectedLine = null;
+let displayedTrip = null;
 
-let selected_line = null;
 let color = 0;
 const LINE_COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'brown', 'grey', "lime"];
-
-let displayed_trip = null;
 
 // Drawing functions
 function drawBackground() {
@@ -67,8 +66,8 @@ function drawTransitLine(line) {
 }
 
 function drawDisplayedTrip() {
-    if(displayed_trip == null) return;
-    displayed_trip.steps.forEach(step => {
+    if(displayedTrip == null) return;
+    displayedTrip.steps.forEach(step => {
         ctx.strokeStyle = "#7efcb9";
         ctx.lineWidth = 6;
         ctx.lineCap = "round";
@@ -114,7 +113,7 @@ function drawDisplayedTrip() {
 }
 
 function displayTransitTrip(trip) {
-    displayed_trip = trip;
+    displayedTrip = trip;
 }
 
 function showCommuters() {
@@ -153,7 +152,7 @@ function isOnScreen(location) {
 function addStop(location) {
     // If location is not further than 100 meters from previous stations on the line
     let too_close = false;
-    selected_line.stops.forEach(station => {
+    selectedLine.stops.forEach(station => {
         if(location.isWithin(100/M_PER_PIXEL, station.location)) too_close = true;
     })
 
@@ -161,17 +160,17 @@ function addStop(location) {
 
     for(var i = 0; i < stations.length; i++) {
         if(location.isWithin(100 / M_PER_PIXEL, stations[i].location)) {
-            selected_line.addStop(stations[i]);
-            actionStack.push({type:"add_stop", line: selected_line, station: stations[i]});
+            selectedLine.addStop(stations[i]);
+            actionStack.push({type:"add_stop", line: selectedLine, station: stations[i]});
             return;
         }
     }
 
     const station = new Station("Station " + (stations.length + 1), location);
     stations.push(station);
-    selected_line.addStop(station);
+    selectedLine.addStop(station);
     
-    actionStack.push({type:"add_station", line: selected_line, station: station});
+    actionStack.push({type:"add_station", line: selectedLine, station: station});
 }
 
 function removeStation(station) {
@@ -202,12 +201,12 @@ function undoAction(action) {
         transit_lines.splice(index, 1);
         color = action.color;
         mode = "view";
-        selected_line = null;
+        selectedLine = null;
         setBuildButtonText("view");
     }
     else if(action.type == "finish_line") {
         mode = "build";
-        selected_line = action.line;
+        selectedLine = action.line;
         setBuildButtonText("build");
     }
     else if(action.type == "remove_station") {
@@ -425,7 +424,7 @@ document.getElementById("btn_build_line_continue").addEventListener("click", fun
     if(line_name == null || line_name.length == 0) line_name = "Line " + (transit_lines.length + 1);
     let new_line = new TransitLine(line_name, LINE_COLORS[color % LINE_COLORS.length], TRAIN_SPEED, STOP_TIME);
     transit_lines.push(new_line);
-    selected_line = new_line;
+    selectedLine = new_line;
     actionStack.push({type: "add_line", target: new_line, color: color});
     color = color + 1 % LINE_COLORS.length;
     hideBuildLineDialog();
@@ -592,7 +591,7 @@ game_container.addEventListener("click", (e) => {
 document.getElementById("btn_close_simulation_modal").addEventListener("click", hideSimulationDialog);
 
 document.getElementById("btn_confirm_line_continue").addEventListener("click", function() {
-    actionStack.push({type:"finish_line", line: selected_line});
+    actionStack.push({type:"finish_line", line: selectedLine});
     mode = "view";
     showMenuBarButtons("view");
     setBuildButtonText("view");
@@ -704,10 +703,10 @@ function hideBuildLineDialog() {
 function showConfirmLineDialog() {
     document.getElementById("confirm_line_modal").style.visibility = "visible";
 
-    const line_cost = calculateLineCost(selected_line);
+    const line_cost = calculateLineCost(selectedLine);
     document.getElementById("tb_line_cost").innerHTML = format_cost(line_cost);
 
-    actionStack.push({type:"finish_line", line: selected_line});
+    actionStack.push({type:"finish_line", line: selectedLine});
     mode = "confirm_line_menu";
     showMenuBarButtons("modal");
     setBuildButtonText("view");
@@ -841,7 +840,7 @@ function simulate() {
     let transit_trips = [];
     for(let i = 0; i < 250; i++)  {
         let commuter = commuters[Math.floor(Math.random() * commuters.length)];
-        const trip = calculateTransitTrip(commuter.location, commuter.destination.location);
+        const trip = findOptimalTransitTrip(commuter.location, commuter.destination.location);
         transit_trips.push(trip);
     }
 
@@ -914,16 +913,7 @@ function calculateTransitStatistics(trips) {
         lineUsage: metro_line_usage, longest_trip: longest_trip, transit_trip_percentage: transit_trip_percentage};
 }
 
-function test_simulate() {
-    const location1 = new Point(1668, 460);
-    const location2 = new Point(1228, 824);
-
-    const trip = calculateTransitTrip(location1, location2);
-    console.log(trip);
-    console.log(trip.calculateTotalDuration());
-}
-
-function calculateTransitTrip(location1, location2) {
+function findOptimalTransitTrip(location1, location2) {
     const shortest_trips = [];
 
     // Add walking trip
@@ -959,6 +949,10 @@ function calculateTransitTrip(location1, location2) {
     return shortest_trip;
 }
 
+function calculateWalkingTime(distance) {
+    return distance * M_PER_PIXEL / WALKING_SPEED;
+}
+
 function findClosestStations(location, n) {
     const sortByDistance = (a, b) => a.location.distanceTo(location) - b.location.distanceTo(location);
 
@@ -976,10 +970,6 @@ function calculateAverage(arr) {
     return total / arr.length;
 }
 
-function calculateWalkingTime(distance) {
-    return distance * M_PER_PIXEL / WALKING_SPEED;
-}
-
 function getGameMapColor(location) {
     const pixel_data = game_map_canvas.getContext('2d').getImageData(location.x, location.y, 1, 1).data;
 
@@ -992,4 +982,14 @@ function getGameMapColor(location) {
 
 function format_cost(cost) {
     return (new Intl.NumberFormat("en-CA", {style: "currency", currency: "CAD"}).format(Math.round(cost) * 1000));
+}
+
+// Testing functions
+function test_simulate() {
+    const location1 = new Point(1668, 460);
+    const location2 = new Point(1228, 824);
+
+    const trip = findOptimalTransitTrip(location1, location2);
+    console.log(trip);
+    console.log(trip.calculateTotalDuration());
 }

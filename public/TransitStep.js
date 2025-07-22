@@ -6,8 +6,4 @@ class TransitStep {
         this.line = line;
         this.walk_time = walk_time;
     }
-
-    print() {
-        console.log(`Take line ${line} from ${start.name} to ${this.end.name}`);
-    }
 }
