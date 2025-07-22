@@ -361,7 +361,9 @@ function showMenuBarButtons(menu_mode) {
             document.getElementById("btn_transit_density").style.display = "inline";
             document.getElementById("btn_simulate").style.display = "inline";
             document.getElementById("btn_reset_map").style.display = "inline";
-            document.getElementById("btn_settings").style.display = "inline";
+            document.getElementById("btn_settings").style.display = "none";
+            document.getElementById("btn_save").style.display = "inline";
+            document.getElementById("btn_load").style.display = "inline";
             document.getElementById("btn_zoom_out").style.display = "inline";
             document.getElementById("btn_zoom_in").style.display = "inline";
             break;
@@ -370,7 +372,9 @@ function showMenuBarButtons(menu_mode) {
             document.getElementById("btn_transit_density").style.display = "inline";
             document.getElementById("btn_simulate").style.display = "none";
             document.getElementById("btn_reset_map").style.display = "inline";
-            document.getElementById("btn_settings").style.display = "inline";
+            document.getElementById("btn_settings").style.display = "none";
+            document.getElementById("btn_save").style.display = "none";
+            document.getElementById("btn_load").style.display = "inline";
             document.getElementById("btn_zoom_out").style.display = "inline";
             document.getElementById("btn_zoom_in").style.display = "inline";
             break;
@@ -379,7 +383,9 @@ function showMenuBarButtons(menu_mode) {
             document.getElementById("btn_transit_density").style.display = "none";
             document.getElementById("btn_simulate").style.display = "none";
             document.getElementById("btn_reset_map").style.display = "none";
-            document.getElementById("btn_settings").style.display = "inline";
+            document.getElementById("btn_settings").style.display = "none";
+            document.getElementById("btn_save").style.display = "none";
+            document.getElementById("btn_load").style.display = "none";
             document.getElementById("btn_zoom_out").style.display = "none";
             document.getElementById("btn_zoom_in").style.display = "none";
             break;
@@ -406,6 +412,9 @@ document.getElementById("btn_simulate").addEventListener("click", (e) => {
     e.stopImmediatePropagation();
     if(mode != "view") return;
     hideInformationMenus();
+
+    if(calculateTotaCost() > STARTING_BUDGET) return;
+
     simulate();
 });
 
@@ -436,10 +445,76 @@ document.getElementById("station_quick_menu").addEventListener("click", function
     e.stopImmediatePropagation();
 });
 
+document.getElementById("btn_save").addEventListener("click", function(e) {
+    e.stopImmediatePropagation();
+
+    const station_data = [];
+    const line_data = [];
+
+    stations.forEach(station => {
+        const line_ids = [];
+
+        station.lines.forEach(line => {
+            line_ids.push(line.id);
+         });
+
+        const data = { id: station.id, name: station.name, location: station.location, line_ids: line_ids};
+        station_data.push(data);
+    });
+
+    transit_lines.forEach(line => {
+        const stop_ids = [];
+
+        line.stops.forEach(station => {
+            stop_ids.push(station.id);
+        });
+
+        const data = {id: line.id, name: line.name, color: line.color, 
+            stops: stop_ids, train_speed: line.train_speed, stop_time: line.stop_time};
+        line_data.push(data);
+    });
+
+    const save_data = {stations: station_data, lines: line_data};
+    const save_string = JSON.stringify(save_data);
+
+    saveText(save_string, "OG_Transpo.json");
+});
+
+document.getElementById("btn_load").addEventListener("click", function(e) {
+    e.stopImmediatePropagation();
+
+    document.getElementById("load_file_input").click();
+});
+
+document.getElementById("load_file_input").addEventListener('change', () => {
+    const selectedFile = document.getElementById("load_file_input").files[0];
+    let fr = new FileReader();
+    fr.onload = function () {
+        const data_string = fr.result;
+        const json_data = JSON.parse(data_string);
+
+        reset();
+        loadFromJson(json_data);
+    }
+
+	fr.readAsText(selectedFile);
+});
+
+function saveText(text, filename){
+  var a = document.createElement('a');
+  a.setAttribute('href', 'data:text/plain;charset=utf-8,'+encodeURIComponent(text));
+  a.setAttribute('download', filename);
+  a.click()
+}
+
 // Clear all construction
 const reset_map_button = document.getElementById("btn_reset_map");
 reset_map_button.addEventListener("click", (e) => {
     e.stopImmediatePropagation();
+    reset();
+});
+
+function reset() {
     transit_lines.splice(0, transit_lines.length);
     stations.splice(0, stations.length);
     mode = "view";
@@ -448,7 +523,26 @@ reset_map_button.addEventListener("click", (e) => {
     hideInformationMenus();
     hideConfirmLineDialog();
     updateBudgetDisplay(STARTING_BUDGET);
-});
+}
+
+function loadFromJson(json) {
+    const station_data = json.stations;
+    const line_data = json.lines;
+
+    station_data.forEach(data => {
+        const station = new Station(data.name, new Point(data.location.x, data.location.y), data.id);
+        stations.push(station);
+    });
+
+    line_data.forEach(data => {
+        const line = new TransitLine(data.name, data.color, data.train_speed, data.stop_time, data.id);
+        data.stops.forEach(station_id => {
+            const station = stations.find(station => station.id == station_id);
+            line.addStop(station);
+        });
+        transit_lines.push(line);
+    })
+}
 
 const new_transit_line_button = document.getElementById("btn_new_transit_line");
 new_transit_line_button.addEventListener("click", (e) => {
@@ -659,7 +753,7 @@ function showStationQuickMenu(location, station) {
         quickStationMenu.style.top = (location.y + 20) + "px";
     }
     else {
-        quickStationMenu.style.top = (location.y - 200) + "px";
+        quickStationMenu.style.top = (location.y - 140) + "px";
     }
 
     let x = Math.max(20, location.x - 100);

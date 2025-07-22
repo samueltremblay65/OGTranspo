@@ -1,11 +1,13 @@
 class TransitLine {
-    constructor(name, color, train_speed, stop_time) { 
+    constructor(name, color, train_speed, stop_time, id) { 
     this.name = name;
     this.color = color;
     this.stops = [];
-    this.frequency = 6;
     this.train_speed = train_speed;
     this.stop_time = stop_time;
+
+    if(id != null) this.id = id;
+    else this.id = crypto.randomUUID();
   }
 
   // Assumes that both stops are on this line
