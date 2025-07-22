@@ -488,6 +488,7 @@ document.getElementById("btn_load").addEventListener("click", function(e) {
 
 document.getElementById("load_file_input").addEventListener('change', () => {
     const selectedFile = document.getElementById("load_file_input").files[0];
+    document.getElementById("load_file_input").value = null;
     let fr = new FileReader();
     fr.onload = function () {
         const data_string = fr.result;
