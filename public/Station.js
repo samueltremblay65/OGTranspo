@@ -1,8 +1,10 @@
 class Station {
-    constructor(name, location) {
+    constructor(name, location, id) {
         this.name = name;
         this.location = location;
         this.lines = [];
+        if(id != null) this.id = id;
+        else this.id = crypto.randomUUID();
     }
 
     addLine(line) {

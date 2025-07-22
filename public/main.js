@@ -354,6 +354,44 @@ function getMousePos(canvas, evt) {
     };
 }
 
+function showMenuBarButtons(menu_mode) {
+    switch(menu_mode){
+        case "view":
+            document.getElementById("btn_new_transit_line").style.display = "inline";
+            document.getElementById("btn_transit_density").style.display = "inline";
+            document.getElementById("btn_simulate").style.display = "inline";
+            document.getElementById("btn_reset_map").style.display = "inline";
+            document.getElementById("btn_settings").style.display = "none";
+            document.getElementById("btn_save").style.display = "inline";
+            document.getElementById("btn_load").style.display = "inline";
+            document.getElementById("btn_zoom_out").style.display = "inline";
+            document.getElementById("btn_zoom_in").style.display = "inline";
+            break;
+        case "build":
+            document.getElementById("btn_new_transit_line").style.display = "inline";
+            document.getElementById("btn_transit_density").style.display = "inline";
+            document.getElementById("btn_simulate").style.display = "none";
+            document.getElementById("btn_reset_map").style.display = "inline";
+            document.getElementById("btn_settings").style.display = "none";
+            document.getElementById("btn_save").style.display = "none";
+            document.getElementById("btn_load").style.display = "inline";
+            document.getElementById("btn_zoom_out").style.display = "inline";
+            document.getElementById("btn_zoom_in").style.display = "inline";
+            break;
+        case "modal":
+            document.getElementById("btn_new_transit_line").style.display = "none";
+            document.getElementById("btn_transit_density").style.display = "none";
+            document.getElementById("btn_simulate").style.display = "none";
+            document.getElementById("btn_reset_map").style.display = "none";
+            document.getElementById("btn_settings").style.display = "none";
+            document.getElementById("btn_save").style.display = "none";
+            document.getElementById("btn_load").style.display = "none";
+            document.getElementById("btn_zoom_out").style.display = "none";
+            document.getElementById("btn_zoom_in").style.display = "none";
+            break;
+    }
+}
+
 document.getElementById("btn_zoom_out").addEventListener("click", (e) => {
     e.stopImmediatePropagation();
     if(scaling > 0.6) scaling -= 0.2;
@@ -373,6 +411,9 @@ document.getElementById("btn_transit_density").addEventListener("click", (e) => 
 document.getElementById("btn_simulate").addEventListener("click", (e) => {
     e.stopImmediatePropagation();
     if(mode != "view") return;
+    hideInformationMenus();
+
+    if(calculateTotaCost() > STARTING_BUDGET) return;
 
     simulate();
 });
@@ -389,6 +430,7 @@ document.getElementById("btn_build_line_continue").addEventListener("click", fun
     color = color + 1 % LINE_COLORS.length;
     hideBuildLineDialog();
     mode = "build";
+    showMenuBarButtons("build");
     setBuildButtonText("build");
 });
 
@@ -396,24 +438,112 @@ document.getElementById("btn_build_line_cancel").addEventListener("click", funct
     e.stopImmediatePropagation();
     hideBuildLineDialog();
     mode = "view";
+    showMenuBarButtons("view");
 });
 
 document.getElementById("station_quick_menu").addEventListener("click", function(e) {
     e.stopImmediatePropagation();
 });
 
+document.getElementById("btn_save").addEventListener("click", function(e) {
+    e.stopImmediatePropagation();
+
+    const station_data = [];
+    const line_data = [];
+
+    stations.forEach(station => {
+        const line_ids = [];
+
+        station.lines.forEach(line => {
+            line_ids.push(line.id);
+         });
+
+        const data = { id: station.id, name: station.name, location: station.location, line_ids: line_ids};
+        station_data.push(data);
+    });
+
+    transit_lines.forEach(line => {
+        const stop_ids = [];
+
+        line.stops.forEach(station => {
+            stop_ids.push(station.id);
+        });
+
+        const data = {id: line.id, name: line.name, color: line.color, 
+            stops: stop_ids, train_speed: line.train_speed, stop_time: line.stop_time};
+        line_data.push(data);
+    });
+
+    const save_data = {stations: station_data, lines: line_data};
+    const save_string = JSON.stringify(save_data);
+
+    saveText(save_string, "OG_Transpo.json");
+});
+
+document.getElementById("btn_load").addEventListener("click", function(e) {
+    e.stopImmediatePropagation();
+
+    document.getElementById("load_file_input").click();
+});
+
+document.getElementById("load_file_input").addEventListener('change', () => {
+    const selectedFile = document.getElementById("load_file_input").files[0];
+    document.getElementById("load_file_input").value = null;
+    let fr = new FileReader();
+    fr.onload = function () {
+        const data_string = fr.result;
+        const json_data = JSON.parse(data_string);
+
+        reset();
+        loadFromJson(json_data);
+    }
+
+	fr.readAsText(selectedFile);
+});
+
+function saveText(text, filename){
+  var a = document.createElement('a');
+  a.setAttribute('href', 'data:text/plain;charset=utf-8,'+encodeURIComponent(text));
+  a.setAttribute('download', filename);
+  a.click()
+}
+
 // Clear all construction
 const reset_map_button = document.getElementById("btn_reset_map");
 reset_map_button.addEventListener("click", (e) => {
     e.stopImmediatePropagation();
+    reset();
+});
+
+function reset() {
     transit_lines.splice(0, transit_lines.length);
     stations.splice(0, stations.length);
     mode = "view";
+    showMenuBarButtons("view");
     setBuildButtonText("view");
     hideInformationMenus();
     hideConfirmLineDialog();
     updateBudgetDisplay(STARTING_BUDGET);
-});
+}
+
+function loadFromJson(json) {
+    const station_data = json.stations;
+    const line_data = json.lines;
+
+    station_data.forEach(data => {
+        const station = new Station(data.name, new Point(data.location.x, data.location.y), data.id);
+        stations.push(station);
+    });
+
+    line_data.forEach(data => {
+        const line = new TransitLine(data.name, data.color, data.train_speed, data.stop_time, data.id);
+        data.stops.forEach(station_id => {
+            const station = stations.find(station => station.id == station_id);
+            line.addStop(station);
+        });
+        transit_lines.push(line);
+    })
+}
 
 const new_transit_line_button = document.getElementById("btn_new_transit_line");
 new_transit_line_button.addEventListener("click", (e) => {
@@ -464,6 +594,7 @@ document.getElementById("btn_close_simulation_modal").addEventListener("click", 
 document.getElementById("btn_confirm_line_continue").addEventListener("click", function() {
     actionStack.push({type:"finish_line", line: selected_line});
     mode = "view";
+    showMenuBarButtons("view");
     setBuildButtonText("view");
 
     const total_cost = calculateTotaCost();
@@ -482,8 +613,9 @@ document.getElementById("btn_confirm_line_cancel").addEventListener("click", fun
         action = actionStack.pop();
         undoAction(action);
     }while(action.type != "add_line");
-    mode = "view";
 
+    mode = "view";
+    showMenuBarButtons("view");
     setBuildButtonText("view");
     hideConfirmLineDialog();
 });
@@ -504,6 +636,7 @@ document.getElementById("station_quick_remove").addEventListener("click", functi
 
 document.getElementById("btn_budget_alert_dismiss").addEventListener("click", function() {
     mode = "view";
+    showMenuBarButtons("view");
     document.getElementById("budget_alert_modal").style.visibility = "hidden";
 })
 
@@ -536,6 +669,8 @@ function station_quick_rename() {
 
 function showSimulationDialog(statistics) {
     mode = "statistics_menu";
+    showMenuBarButtons("modal");
+
     document.getElementById("simulation_modal").style.visibility = "visible";
     let minutes = Math.round(statistics.averageTime / 60);
     document.getElementById("tb_transit_time").innerHTML = minutes + " minutes";
@@ -552,11 +687,13 @@ function showSimulationDialog(statistics) {
 
 function hideSimulationDialog() {
     mode = "view";
+    showMenuBarButtons("view");
     document.getElementById("simulation_modal").style.visibility = "hidden";
 }
 
 function showBuildLineDialog() {
     mode = "build_menu";
+    showMenuBarButtons("modal");
     document.getElementById("build_line_modal").style.visibility = "visible";
 }
 
@@ -572,6 +709,7 @@ function showConfirmLineDialog() {
 
     actionStack.push({type:"finish_line", line: selected_line});
     mode = "confirm_line_menu";
+    showMenuBarButtons("modal");
     setBuildButtonText("view");
 }
 
@@ -598,11 +736,13 @@ function updateBudgetDisplay(remaining) {
 
 function showBudgetAlert() {
     mode = "budget_alert";
+    showMenuBarButtons("modal");
     document.getElementById("budget_alert_modal").style.visibility = "visible";
 }
 
 function showStationQuickMenu(location, station) {
     mode = "station_quick_menu";
+    showMenuBarButtons("view");
     selectedStation = station;
     const quickStationMenu = document.getElementById("station_quick_menu");
 
@@ -614,7 +754,7 @@ function showStationQuickMenu(location, station) {
         quickStationMenu.style.top = (location.y + 20) + "px";
     }
     else {
-        quickStationMenu.style.top = (location.y - 200) + "px";
+        quickStationMenu.style.top = (location.y - 140) + "px";
     }
 
     let x = Math.max(20, location.x - 100);
@@ -629,6 +769,7 @@ function showStationQuickMenu(location, station) {
 
 function hideStationQuickMenu() {
     mode = "view";
+    showMenuBarButtons("view");
     const quickStationMenu = document.getElementById("station_quick_menu");
     
     quickStationMenu.style.visibility = "hidden";
@@ -646,6 +787,7 @@ function hideStationQuickMenu() {
 
 function hideInformationMenus() {
     hideSimulationDialog();
+    hideStationQuickMenu();
 }
 
 game_map.onload = function() {
