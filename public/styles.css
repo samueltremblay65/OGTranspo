@@ -1,5 +1,6 @@
 :root {
-    --red: #e05e5e;
+    --red:#e59e9e;
+    --green:#d4f0b6;
 }
 
 
@@ -90,6 +91,15 @@ h1, h2, h3, p {
     margin: 0;
 }
 
+li {
+    list-style-type: none;
+}
+
+ul {
+    padding-inline-start: 0;
+    margin: 0;
+}
+
 .modal {
     position: fixed;
     left: 50%;
@@ -134,6 +144,10 @@ h1, h2, h3, p {
     background-color: var(--red);
 }
 
+.green {
+    background-color: var(--green);
+}
+
 #station_quick_menu {
     text-align: center;
 }
@@ -153,4 +167,24 @@ h1, h2, h3, p {
     background-color: #ebffde;
     padding: 5px;
     border: 1px solid #99ba82;
+}
+
+.manage_line_bar_item {
+    width: 100%;
+    margin-block: 5px;
+    border: 1px solid orange;
+    border-radius: 3px;
+    padding: 5px;
+    background-color: #ffeedb;
+}
+
+.manage_line_bar_item p {
+    display: inline-block;
+    text-align: left;
+}
+
+.manage_line_bar_item button {
+    text-align: right;
+    float: right;
+    margin-inline: 5px;
 }
