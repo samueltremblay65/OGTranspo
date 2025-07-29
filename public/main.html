@@ -17,11 +17,10 @@
     <div id="map_container">
         <!-- <div id="map"></div> -->
         <button class="game_button" id="btn_new_transit_line">New Transit Line</button>
-        <!--     <button class="game_button" id="btn_view_transit_line">Manage Transit System</button> -->
+        <button class="game_button" id="btn_manage_system">Manage Transit System</button>
         <button class="game_button" id="btn_transit_density">Commuter Map</button>
         <!--     <button class="game_button" id="btn_neighborhoods">View neighborhoods</button> -->
         <button class="game_button" id="btn_simulate">Simulate</button>
-        <button class="game_button" id="btn_reset_map">Reset</button>
         <button class="game_button" id="btn_settings" style="display: none;">Settings</button>
         <button class="game_button" id="btn_save">Save</button>
         <button class="game_button" id="btn_load">Load</button>
@@ -50,16 +49,37 @@
             <input type="text" placeholder="Line name" id="input_line_name">
             <p>After planning the route, the cost estimation of the project will be calculated</p>
             <div class="buttons">
-                <button id="btn_build_line_continue">Plan line</button>
+                <button class="green" id="btn_build_line_continue">Plan line</button>
                 <button id="btn_build_line_cancel">Cancel</button>
             </div>
         </div>
 
+        <div class="modal" id="manage_modal">
+            <h1>Manage Transit System</h1>
+            <div><h3 class="result">Total Budget: </h3><p class="result" id="tb_manage_total_budget"></p></div>
+            <div><h3 class="result">Available Budget: </h3><p class="result" id="tb_manage_available_budget"></p></div>
+            
+            <h2>Transit Lines</h2>
+            <ul id="manage_line_list">
+                <li class="manage_line_bar_item" id="manage_line_template">
+                    <p class="manage_line_name"></p>
+                    <button class="btn_manage_manage_line">Manage Line</button>
+                    <button class="btn_manage_delete_line red">Delete Line</button>
+                </li>
+            </ul>
+
+
+            <div class="buttons">
+                <button id="btn_manage_reset" class="red">Reset Transit System</button>
+                <button id="btn_close_manage_modal">Close</button>
+            </div>
+        </div>
+        
         <div class="modal" id="confirm_line_modal">
             <h1>Build cost</h1>
             <div><h3 class="result">Total line cost: </h3><p class="result" id="tb_line_cost"></p></div>
             <div class="buttons">
-                <button id="btn_confirm_line_continue">Accept proposal and build line</button>
+                <button class="green" id="btn_confirm_line_continue">Accept proposal and build line</button>
                 <button id="btn_confirm_line_cancel">Reject proposal</button>
             </div>
         </div>

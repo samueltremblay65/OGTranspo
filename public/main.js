@@ -7,9 +7,9 @@ game_map.src = "map.png";
 
 const game_map_canvas = document.createElement('canvas');
 
-let scaling = 1.4;
+let scaling = 1.0;
 
-let center = {x: 800, y: 500};
+let center = {x: 850, y: 200};
 
 const transit_lines = [];
 const stations = [];
@@ -183,6 +183,7 @@ function removeStation(station) {
     });
 
     actionStack.push({type:"remove_station", station: selectedStation, line_indexes: line_indexes});
+    updateBudgetDisplay();
 }
 
 function undoAction(action) {
@@ -358,8 +359,9 @@ function showMenuBarButtons(menu_mode) {
         case "view":
             document.getElementById("btn_new_transit_line").style.display = "inline";
             document.getElementById("btn_transit_density").style.display = "inline";
+            document.getElementById("btn_save").style.display = "inline";
             document.getElementById("btn_simulate").style.display = "inline";
-            document.getElementById("btn_reset_map").style.display = "inline";
+            document.getElementById("btn_manage_system").style.display = "inline";
             document.getElementById("btn_settings").style.display = "none";
             document.getElementById("btn_save").style.display = "inline";
             document.getElementById("btn_load").style.display = "inline";
@@ -369,8 +371,9 @@ function showMenuBarButtons(menu_mode) {
         case "build":
             document.getElementById("btn_new_transit_line").style.display = "inline";
             document.getElementById("btn_transit_density").style.display = "inline";
+            document.getElementById("btn_save").style.display = "none";
             document.getElementById("btn_simulate").style.display = "none";
-            document.getElementById("btn_reset_map").style.display = "inline";
+            document.getElementById("btn_manage_system").style.display = "none";
             document.getElementById("btn_settings").style.display = "none";
             document.getElementById("btn_save").style.display = "none";
             document.getElementById("btn_load").style.display = "inline";
@@ -380,8 +383,9 @@ function showMenuBarButtons(menu_mode) {
         case "modal":
             document.getElementById("btn_new_transit_line").style.display = "none";
             document.getElementById("btn_transit_density").style.display = "none";
+            document.getElementById("btn_save").style.display = "none";
+            document.getElementById("btn_manage_system").style.display = "none";
             document.getElementById("btn_simulate").style.display = "none";
-            document.getElementById("btn_reset_map").style.display = "none";
             document.getElementById("btn_settings").style.display = "none";
             document.getElementById("btn_save").style.display = "none";
             document.getElementById("btn_load").style.display = "none";
@@ -400,6 +404,14 @@ document.getElementById("btn_zoom_in").addEventListener("click", (e) => {
     e.stopImmediatePropagation();
     if(scaling < 3 ) scaling += 0.2;
 });
+
+document.getElementById("btn_manage_system").addEventListener("click", (e) => {
+    e.stopImmediatePropagation();
+
+    if(mode == "view") showManageModal();
+});
+
+document.getElementById("btn_close_manage_modal").addEventListener("click", hideManageModal);
 
 document.getElementById("btn_transit_density").addEventListener("click", (e) => {
     e.stopImmediatePropagation();
@@ -485,6 +497,30 @@ document.getElementById("btn_load").addEventListener("click", function(e) {
     document.getElementById("load_file_input").click();
 });
 
+document.getElementById("btn_manage_reset").addEventListener("click", function(e) {
+    e.stopImmediatePropagation();
+
+    reset();
+
+    document.getElementById("tb_manage_total_budget").innerHTML = format_cost(STARTING_BUDGET);
+    document.getElementById("tb_manage_available_budget").innerHTML = format_cost(STARTING_BUDGET - calculateTotaCost());
+
+    const template = document.querySelector(".manage_line_bar_item");
+    const list = document.getElementById("manage_line_list");
+
+    template.style.display = "inline-block";
+
+    while (list.childElementCount > 1) {
+        list.removeChild(list.lastElementChild);
+    }
+
+    const msg = document.createElement("p");
+    msg.innerHTML = "This transit system does not have any transit lines yet.";
+    list.appendChild(msg);
+    template.style.display = "none";
+});
+
+
 document.getElementById("load_file_input").addEventListener('change', () => {
     const selectedFile = document.getElementById("load_file_input").files[0];
     document.getElementById("load_file_input").value = null;
@@ -506,13 +542,6 @@ function saveText(text, filename){
   a.setAttribute('download', filename);
   a.click()
 }
-
-// Clear all construction
-const reset_map_button = document.getElementById("btn_reset_map");
-reset_map_button.addEventListener("click", (e) => {
-    e.stopImmediatePropagation();
-    reset();
-});
 
 function reset() {
     transit_lines.splice(0, transit_lines.length);
@@ -558,8 +587,8 @@ new_transit_line_button.addEventListener("click", (e) => {
 });
 
 function setBuildButtonText(state) {
-    if(state == "build") new_transit_line_button.innerHTML = "Finish transit line";
-    else new_transit_line_button.innerHTML = "New transit line";
+    if(state == "build") new_transit_line_button.innerHTML = "Finish Transit Line";
+    else new_transit_line_button.innerHTML = "New Transit Line";
 }
 
 // Building transit line
@@ -589,6 +618,8 @@ game_container.addEventListener("click", (e) => {
 });
 
 document.getElementById("btn_close_simulation_modal").addEventListener("click", hideSimulationDialog);
+
+document.getElementById("btn_close_manage_modal").addEventListener("click", hideSimulationDialog);
 
 document.getElementById("btn_confirm_line_continue").addEventListener("click", function() {
     actionStack.push({type:"finish_line", line: selectedLine});
@@ -688,6 +719,48 @@ function hideSimulationDialog() {
     mode = "view";
     showMenuBarButtons("view");
     document.getElementById("simulation_modal").style.visibility = "hidden";
+}
+
+function showManageModal() {
+    mode = "manage";
+    showMenuBarButtons("modal");
+    document.getElementById("manage_modal").style.visibility = "visible";
+
+    document.getElementById("tb_manage_total_budget").innerHTML = format_cost(STARTING_BUDGET);
+    document.getElementById("tb_manage_available_budget").innerHTML = format_cost(STARTING_BUDGET - calculateTotaCost());
+
+    const template = document.querySelector(".manage_line_bar_item");
+    const list = document.getElementById("manage_line_list");
+
+    template.style.display = "inline-block";
+
+    while (list.childElementCount > 1) {
+        list.removeChild(list.lastElementChild);
+    }
+
+    if(transit_lines.length == 0) {
+        const msg = document.createElement("p");
+        msg.innerHTML = "This transit system does not have any transit lines yet.";
+        list.appendChild(msg);
+        template.style.display = "none";
+        return;
+    }
+
+    transit_lines.forEach(line => {
+        const line_bar = template.cloneNode(true);
+        const tb_line_name = line_bar.querySelector(".manage_line_name");
+        tb_line_name.innerHTML = line.name;
+        list.appendChild(line_bar);
+    });
+
+    template.style.display = "none";
+
+}
+
+function hideManageModal() {
+    mode = "view";
+    showMenuBarButtons("view");
+    document.getElementById("manage_modal").style.visibility = "hidden";
 }
 
 function showBuildLineDialog() {
