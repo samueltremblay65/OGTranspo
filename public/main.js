@@ -185,7 +185,7 @@ function removeStation(station) {
     });
 
     actionStack.push({type:"remove_station", station: selectedStation, line_indexes: line_indexes});
-    updateBudgetDisplay();
+    updateBudgetDisplay(STARTING_BUDGET - calculateTotalCost());
 }
 
 function undoAction(action) {
@@ -227,23 +227,41 @@ function undoAction(action) {
 
 // Costing functions
 function calculateLineCost(line) {
-    // Calculates only cost of railway
     let cost = 0;
-
-    cost += COST_STATION * line.stops.length;
+    cost += calculateStationCost(line);
 
     if(line.stops.length < 2) {
         return cost;
     }
 
-    for(let i = 0; i < line.stops.length - 2; i++) {
-        cost += COST_RAIL_M * M_PER_PIXEL * line.stops[i].location.distanceTo(line.stops[i+1].location);
-    }
+    cost += calculateRailCost(line);
 
     return cost;
 }
 
-function calculateTotaCost() {
+function calculateStationCost(line) {
+    let cost = 0;
+    cost += COST_STATION * line.stops.length;
+    return cost;
+}
+
+function calculateRailCost(line) {
+    let cost = 0;
+    for(let i = 0; i < line.stops.length - 1; i++) {
+        cost += COST_RAIL_M * M_PER_PIXEL * line.stops[i].location.distanceTo(line.stops[i+1].location);
+    }
+    return cost;
+}
+
+function calculateRailMeters(line) {
+    let meters = 0;
+    for(let i = 0; i < line.stops.length - 1; i++) {
+        meters += M_PER_PIXEL * line.stops[i].location.distanceTo(line.stops[i+1].location);
+    }
+    return meters;
+}
+
+function calculateTotalCost() {
     let cost = 0;
     transit_lines.forEach((line) => cost += calculateLineCost(line));
     return cost;
@@ -251,6 +269,7 @@ function calculateTotaCost() {
 
 // Transit simulation functions
 function populateNeighborhood() {
+    // This can make the code crash if there is no white in the map
     destinations.forEach((destination) => {
 
         if(destination.type == "city") {
@@ -426,7 +445,7 @@ document.getElementById("btn_simulate").addEventListener("click", (e) => {
     if(mode != "view") return;
     hideInformationMenus();
 
-    if(calculateTotaCost() > STARTING_BUDGET) return;
+    if(calculateTotalCost() > STARTING_BUDGET) return;
 
     simulate();
 });
@@ -615,7 +634,7 @@ document.getElementById("btn_confirm_line_continue").addEventListener("click", f
     showMenuBarButtons("view");
     setBuildButtonText("view");
 
-    const total_cost = calculateTotaCost();
+    const total_cost = calculateTotalCost();
 
     const budget_remaining = STARTING_BUDGET - total_cost;
 
@@ -715,7 +734,7 @@ function showManageModal() {
     document.getElementById("manage_modal").style.visibility = "visible";
 
     document.getElementById("tb_manage_total_budget").innerHTML = format_cost(STARTING_BUDGET);
-    document.getElementById("tb_manage_available_budget").innerHTML = format_cost(STARTING_BUDGET - calculateTotaCost());
+    document.getElementById("tb_manage_available_budget").innerHTML = format_cost(STARTING_BUDGET - calculateTotalCost());
 
     const template = document.querySelector(".manage_line_bar_item");
     const list = document.getElementById("manage_line_list");
@@ -781,7 +800,12 @@ function showConfirmLineDialog() {
     document.getElementById("confirm_line_modal").style.visibility = "visible";
 
     const line_cost = calculateLineCost(selectedLine);
+
     document.getElementById("tb_line_cost").innerHTML = format_cost(line_cost);
+    document.getElementById("tb_confirm_number_station").innerHTML = selectedLine.stops.length;
+    document.getElementById("tb_confirm_station_cost").innerHTML = format_cost(calculateStationCost(selectedLine));
+    document.getElementById("tb_confirm_rail_km").innerHTML = format_length(calculateRailMeters(selectedLine) / 1000, "km");
+    document.getElementById("tb_confirm_rail_cost").innerHTML = format_cost(calculateRailCost(selectedLine));
 
     actionStack.push({type:"finish_line", line: selectedLine});
     mode = "confirm_line_menu";
@@ -870,6 +894,8 @@ game_map.onload = function() {
     game_map_canvas.width = game_map.width;
     game_map_canvas.height = game_map.height;
     game_map_canvas.getContext('2d').drawImage(game_map, 0, 0, game_map.width, game_map.height);
+
+    console.log("Loaded");
 
     // Simulation set up
     populateNeighborhood();
@@ -1061,6 +1087,13 @@ function format_cost(cost) {
     return (new Intl.NumberFormat("en-CA", {style: "currency", currency: "CAD"}).format(Math.round(cost) * 1000));
 }
 
+function format_length(length, unit) {
+    if(unit == "meters") {
+        return Math.round(length) + "m";
+    }
+    return length.toFixed(2) + "km";
+
+}
 // Testing functions
 function test_simulate() {
     const location1 = new Point(1668, 460);
