@@ -11,6 +11,10 @@ class Station {
         this.lines.push(line);
     }
 
+    removeLine(line) {
+        this.lines.splice(this.lines.indexOf(line), 1);
+    }
+
     sharesLine(station) {
         for(let i = 0; i < this.lines.length; i++) { 
             if(station.lines.includes(this.lines[i])){

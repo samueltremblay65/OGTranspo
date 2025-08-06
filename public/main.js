@@ -291,7 +291,7 @@ function populateNeighborhood() {
 document.onkeydown = checkKey;
 document.onkeyup = checkKeyUp;
 
-const actionStack = [];
+let actionStack = [];
 
 function checkKey(e) {
 
@@ -502,22 +502,7 @@ document.getElementById("btn_manage_reset").addEventListener("click", function(e
 
     reset();
 
-    document.getElementById("tb_manage_total_budget").innerHTML = format_cost(STARTING_BUDGET);
-    document.getElementById("tb_manage_available_budget").innerHTML = format_cost(STARTING_BUDGET - calculateTotaCost());
-
-    const template = document.querySelector(".manage_line_bar_item");
-    const list = document.getElementById("manage_line_list");
-
-    template.style.display = "inline-block";
-
-    while (list.childElementCount > 1) {
-        list.removeChild(list.lastElementChild);
-    }
-
-    const msg = document.createElement("p");
-    msg.innerHTML = "This transit system does not have any transit lines yet.";
-    list.appendChild(msg);
-    template.style.display = "none";
+    showManageModal();
 });
 
 
@@ -552,6 +537,7 @@ function reset() {
     hideInformationMenus();
     hideConfirmLineDialog();
     updateBudgetDisplay(STARTING_BUDGET);
+    actionStack = [];
 }
 
 function loadFromJson(json) {
@@ -750,6 +736,21 @@ function showManageModal() {
         const line_bar = template.cloneNode(true);
         const tb_line_name = line_bar.querySelector(".manage_line_name");
         tb_line_name.innerHTML = line.name;
+
+        const btn_delete_line = line_bar.querySelector(".btn_manage_delete_line");
+
+        btn_delete_line.addEventListener("click", function() {
+            line.stops.forEach((stop) => {
+                stop.removeLine(stop);
+                if(stop.lines.length == 0) {
+                    stations.splice(stations.indexOf(stop), 1);
+                }
+            });
+
+            transit_lines.splice(transit_lines.indexOf(line), 1);
+            showManageModal();
+        });
+
         list.appendChild(line_bar);
     });
 
