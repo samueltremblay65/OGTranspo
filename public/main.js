@@ -26,7 +26,9 @@ let selectedLine = null;
 let displayedTrip = null;
 
 let color = 0;
-const LINE_COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'brown', 'grey', "lime"];
+const LINE_COLORS = ['blue', 'green', 'yellow', 'orange','red','pink', 'brown', 'grey', "lime"];
+
+const LINE_MENU_COLORS = ["#b9caed", "#94d1a7", "#f7f4b2", "#ffcc73", "#e59e9e","#ffe3f1", "#cfc4b8", "#dbdbdb", "#dbf5ba"];
 
 // Drawing functions
 function drawBackground() {
@@ -736,6 +738,7 @@ function showManageModal() {
         const line_bar = template.cloneNode(true);
         const tb_line_name = line_bar.querySelector(".manage_line_name");
         tb_line_name.innerHTML = line.name;
+        line_bar.style.background = LINE_MENU_COLORS[LINE_COLORS.indexOf(line.color)];
 
         const btn_delete_line = line_bar.querySelector(".btn_manage_delete_line");
 

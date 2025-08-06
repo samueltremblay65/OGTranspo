@@ -1,5 +1,5 @@
 :root {
-    --red:#e59e9e;
+    --red: #e67663;
     --green:#d4f0b6;
 }
 
@@ -144,6 +144,10 @@ ul {
     background-color: var(--red);
 }
 
+.red:hover {
+    border-color: #bd1c00;
+}
+
 .green {
     background-color: var(--green);
 }
@@ -172,7 +176,7 @@ ul {
 .manage_line_bar_item {
     width: 100%;
     margin-block: 5px;
-    border: 1px solid orange;
+    border: 1px solid grey;
     border-radius: 3px;
     padding: 5px;
     background-color: #ffeedb;
