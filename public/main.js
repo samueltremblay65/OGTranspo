@@ -206,6 +206,7 @@ function undoAction(action) {
         mode = "view";
         selectedLine = null;
         setBuildButtonText("view");
+        showMenuBarButtons("view");
     }
     else if(action.type == "finish_line") {
         mode = "build";
@@ -222,6 +223,12 @@ function undoAction(action) {
             action.station.lines.push(line);
             line.restoreStop(action.station, index);
         });
+    }
+    else if(action.type == "move_station") {
+        mode = "view";
+        setBuildButtonText("view");
+        showMenuBarButtons("view");
+        action.station.location = action.oldLocation;
     }
 }
 
@@ -601,9 +608,15 @@ function loadFromJson(json) {
 const new_transit_line_button = document.getElementById("btn_new_transit_line");
 new_transit_line_button.addEventListener("click", (e) => {
     e.stopImmediatePropagation();
-    if(mode != "build") {
+    if(mode == "view") {
         hideInformationMenus();
         showBuildLineDialog();
+    }
+    else if(mode == "move") {
+        showStationQuickMenu(convertToCanvasCoordinates(selectedStation.location), selectedStation);
+        setBuildButtonText("view");
+        mode = "view";
+        showMenuBarButtons("view");
     }
     else{
         // Complete the line build and calculate the cost of the build
@@ -613,10 +626,11 @@ new_transit_line_button.addEventListener("click", (e) => {
 
 function setBuildButtonText(state) {
     if(state == "build") new_transit_line_button.innerHTML = "Finish Transit Line";
+    else if(state == "move") new_transit_line_button.innerHTML = "Cancel station move";
     else new_transit_line_button.innerHTML = "New Transit Line";
 }
 
-// Building transit line
+// game click listener
 game_container.addEventListener("click", (e) => {
     let pos = getMousePos(canvas, e);
     let canvas_location = new Point(pos.x, pos.y);
@@ -628,11 +642,21 @@ game_container.addEventListener("click", (e) => {
         console.log(getGameMapColor(game_location));
     }
 
-    if(selectedStation != null) hideStationQuickMenu();
+    if(selectedStation != null && mode != "move") {
+        hideStationQuickMenu();
+    }
 
-    if(mode == "view") {
+    if(mode == "move") {
+        const oldLocation = selectedStation.location;
+        selectedStation.location = game_location;
+        mode = "view";
+        setBuildButtonText("view");
+        showMenuBarButtons("view");
+
+        actionStack.push({type:"move_station", station: selectedStation, oldLocation: oldLocation});
+    }else if(mode == "view") {
         stations.forEach(station => {
-            if(game_location.distanceTo(station.location) < 50 / M_PER_PIXEL) {
+            if(game_location.distanceTo(station.location) < 100 / M_PER_PIXEL) {
                 showStationQuickMenu(canvas_location, station);            }
         });
     }
@@ -684,9 +708,20 @@ document.getElementById("station_quick_rename").addEventListener("click", functi
     else station_quick_showRename();
 });
 
+document.getElementById("station_quick_move").addEventListener("click", function(e) {
+    e.stopImmediatePropagation();
+
+    hideStationQuickMenu();
+    mode = "move";
+    showMenuBarButtons("build");
+    setBuildButtonText("move");
+});
+
 document.getElementById("station_quick_remove").addEventListener("click", function() {
     removeStation(selectedStation);
     hideStationQuickMenu();
+    mode = "view";
+    showMenuBarButtons("view");
 });
 
 document.getElementById("btn_budget_alert_dismiss").addEventListener("click", function() {
@@ -700,6 +735,8 @@ function station_quick_showRename() {
     rename_input.style.display = "block";
     rename_input.style.visibility = "visible";
     rename_input.setAttribute("placeholder", selectedStation.name);
+
+    // Make other buttons invisible
 
     rename_input.focus();
 
@@ -938,7 +975,7 @@ function showBudgetAlert() {
 }
 
 function showStationQuickMenu(location, station) {
-    mode = "station_quick_menu";
+    mode = "view";
     showMenuBarButtons("view");
     selectedStation = station;
     const quickStationMenu = document.getElementById("station_quick_menu");
@@ -965,8 +1002,6 @@ function showStationQuickMenu(location, station) {
 }
 
 function hideStationQuickMenu() {
-    mode = "view";
-    showMenuBarButtons("view");
     const quickStationMenu = document.getElementById("station_quick_menu");
     
     quickStationMenu.style.visibility = "hidden";
@@ -978,21 +1013,19 @@ function hideStationQuickMenu() {
     const name_tb = document.getElementById("station_quick_tb_name");
     name_tb.style.display = "none";
     name_tb.style.visibility = "hidden";
-
-    selectedStation = null;
 }
 
 function hideInformationMenus() {
     hideSimulationDialog();
     hideStationQuickMenu();
+    mode = "view";
+    showMenuBarButtons("view");
 }
 
 game_map.onload = function() {
     game_map_canvas.width = game_map.width;
     game_map_canvas.height = game_map.height;
     game_map_canvas.getContext('2d').drawImage(game_map, 0, 0, game_map.width, game_map.height);
-
-    console.log("Loaded");
 
     // Simulation set up
     populateNeighborhood();
