@@ -39,7 +39,7 @@
             <div><h3 class="result">Longest trip: </h3><p class="result" id="tb_longest"></p></div>
             <div><h3 class="result">Percentage of trips made via transit: </h3><p class="result" id="tb_transit_percentage"></p></div>
             <div class="buttons">
-                <button id="btn_line_usage">View Metro Line Usage Statistics</button>
+                <button id="btn_show_usage">View Metro Line Usage Statistics</button>
                 <button id="btn_close_simulation_modal">Exit</button>
             </div>
         </div>
@@ -71,6 +71,22 @@
             <div class="buttons" style="margin-top: 5px;">
                 <button id="btn_manage_reset" class="red">Reset Transit System</button>
                 <button id="btn_close_manage_modal">Close</button>
+            </div>
+        </div>
+
+        <div class="modal" id="usage_modal">
+            <h1>Transit Usage Statistics</h1>
+            <h2>Line Usage</h2>
+            <p id="usage_no_line_message" style="display: none;">The transit system currently does not have any transit lines. Consider building new transit lines to reduce transit times</p>
+            <table id="usage_line_table">
+                <tr style="background-color: lightgrey;">
+                    <th>Line name</th>
+                    <th>Ride percentage</th>
+                    <th>Average trip distance</th>
+                </tr>
+            </table>
+            <div class="buttons" style="margin-top: 5px;">
+                <button id="btn_close_usage_modal">Back to simulation results</button>
             </div>
         </div>
         
@@ -110,7 +126,7 @@
     <canvas id="canvas" width="900px" height="600px"></canvas>
 </body>
     <!-- prettier-ignore -->
-    <script src="Constants.js"></script>
+    <script src="Parameters.js"></script>
     <script src="Point.js"></script>
     <script src="Destination.js"></script>
     <script src="destinations.js"></script>

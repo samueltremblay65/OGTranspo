@@ -432,6 +432,22 @@ document.getElementById("btn_manage_system").addEventListener("click", (e) => {
     if(mode == "view") showManageModal();
 });
 
+document.getElementById("btn_show_usage").addEventListener("click", (e) => {
+    e.stopImmediatePropagation();
+    hideSimulationDialog();
+    showUsageModal();
+});
+
+document.getElementById("btn_close_usage_modal").addEventListener("click", (e) => {
+    e.stopImmediatePropagation();
+    hideUsageModal();
+    
+    mode = "statistics_menu";
+    showMenuBarButtons("modal");
+
+    document.getElementById("simulation_modal").style.visibility = "visible";
+});
+
 document.getElementById("btn_close_manage_modal").addEventListener("click", hideManageModal);
 
 document.getElementById("btn_transit_density").addEventListener("click", (e) => {
@@ -728,6 +744,54 @@ function hideSimulationDialog() {
     document.getElementById("simulation_modal").style.visibility = "hidden";
 }
 
+function populateUsageDialog(statistics) {
+    const table = document.getElementById("usage_line_table");
+    while (table.childElementCount > 1) {
+        table.removeChild(table.lastElementChild);
+    }
+
+    transit_lines.forEach(line => {
+        const row = table.insertRow();
+            const line_name_cell = row.insertCell(0);
+            const ride_percentage_cell = row.insertCell(1);
+            const average_distance_cell = row.insertCell(2);
+
+            line_name_cell.innerHTML = line.name;
+
+            ride_percentage_cell.innerHTML = statistics.lineUsage[line.name].trips / statistics.total_trips * 100 + " %";
+            
+            const average_distance = statistics.lineUsage[line.name].total_distance / 1000 / statistics.lineUsage[line.name].trips;
+            average_distance_cell.innerHTML = average_distance.toFixed(2) + "km";
+        
+        row.style.background = LINE_MENU_COLORS[LINE_COLORS.indexOf(line.color)];
+
+        table.appendChild(row);
+    });
+}
+
+function showUsageModal() {
+    mode = "usage";
+    showMenuBarButtons("modal");
+    document.getElementById("usage_modal").style.visibility = "visible";
+    document.getElementById("usage_no_line_message").style.display = "none";
+
+    const table = document.getElementById("usage_line_table");
+
+    table.display = "block";
+
+    if(transit_lines.length == 0) {
+        document.getElementById("usage_no_line_message").style.display = "block";
+        table.style.display = "none";
+        return;
+    }
+}
+
+function hideUsageModal() {
+    mode = "view";
+    showMenuBarButtons("view");
+    document.getElementById("usage_modal").style.visibility = "hidden";
+}
+
 function showManageModal() {
     mode = "manage";
     showMenuBarButtons("modal");
@@ -948,7 +1012,9 @@ function simulate() {
     }
 
     let statistics = calculateTransitStatistics(transit_trips);
+
     showSimulationDialog(statistics);
+    populateUsageDialog(statistics);
     // displayTransitTrip(statistics.longest_trip);
     return statistics.averageTime;
 }
@@ -966,7 +1032,7 @@ function calculateTransitStatistics(trips) {
     let longest_trip;
 
     transit_lines.forEach(line => {
-        metro_line_usage[line.name] = 0;
+        metro_line_usage[line.name] = {trips: 0, total_distance: 0};
     });
 
     trips.forEach(trip => {
@@ -984,7 +1050,8 @@ function calculateTransitStatistics(trips) {
                 walk_time += step.walk_time;
             }
             else if(step.mode == "metro") {
-                metro_line_usage[step.line.name]++;
+                metro_line_usage[step.line.name].trips++;
+                metro_line_usage[step.line.name].total_distance += step.start.location.distanceTo(step.end.location) * M_PER_PIXEL;
             }
         });
         walk_times.push(walk_time);
@@ -1013,7 +1080,7 @@ function calculateTransitStatistics(trips) {
     const transit_trip_percentage = 100 * transit_trips / trips.length;
 
     return {averageTime: averageTime, averageWalkTime: averageWalkTime, connections: averageConnections, 
-        lineUsage: metro_line_usage, longest_trip: longest_trip, transit_trip_percentage: transit_trip_percentage};
+        lineUsage: metro_line_usage, total_trips: trips.length, longest_trip: longest_trip, transit_trip_percentage: transit_trip_percentage};
 }
 
 function findOptimalTransitTrip(location1, location2) {
