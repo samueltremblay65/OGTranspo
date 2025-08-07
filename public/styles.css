@@ -10,7 +10,6 @@
 }
 
 #map_container {
-    border: 1px solid black;
     position: fixed;
     left: 50%;
     top: 55%;
@@ -40,6 +39,7 @@ body {
 
 canvas {
     border: 1px solid black;
+    border-radius: 10px;
     position: fixed;
     left: 50%;
     top: 55%;
@@ -131,7 +131,9 @@ th {
     border-radius: 20px;
     visibility: hidden;
     text-align: left;
-    width: 500px;
+    width: 450px;
+    max-height: 500px;
+    overflow-y: scroll;
 }
 
 .fixed_modal {
