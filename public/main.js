@@ -975,7 +975,7 @@ function showBudgetAlert() {
 }
 
 function showStationQuickMenu(location, station) {
-    mode = "station_quick_menu";
+    mode = "view";
     showMenuBarButtons("view");
     selectedStation = station;
     const quickStationMenu = document.getElementById("station_quick_menu");
