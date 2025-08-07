@@ -593,7 +593,9 @@ function loadFromJson(json) {
             line.addStop(station);
         });
         transit_lines.push(line);
-    })
+    });
+    
+    updateBudgetDisplay(STARTING_BUDGET - calculateTotalCost());
 }
 
 const new_transit_line_button = document.getElementById("btn_new_transit_line");
@@ -864,6 +866,8 @@ function showManageModal() {
 
             transit_lines.splice(transit_lines.indexOf(line), 1);
             showManageModal();
+
+            updateBudgetDisplay(STARTING_BUDGET - calculateTotalCost());
         });
 
         list.appendChild(line_bar);
