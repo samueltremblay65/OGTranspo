@@ -76,18 +76,29 @@
 
         <div class="modal" id="usage_modal">
             <h1>Transit Usage Statistics</h1>
-            <h2>Line Usage</h2>
-            <p id="usage_no_line_message" style="display: none;">The transit system currently does not have any transit lines. Consider building new transit lines to reduce transit times</p>
-            <table id="usage_line_table">
-                <tr style="background-color: lightgrey;">
-                    <th>Line name</th>
-                    <th>Ride percentage</th>
-                    <th>Average trip distance</th>
-                </tr>
-            </table>
-            <div class="buttons" style="margin-top: 5px;">
-                <button id="btn_close_usage_modal">Back to simulation results</button>
+            <p id="usage_empty_message" style="display: none;">The transit system is currently empty. Add transit lines to improve transit times.</p>
+            <div id="usage_tables">
+                <h2>Line Usage</h2>
+                <table id="usage_line_table">
+                    <tr style="background-color: lightgrey;">
+                        <th>Line name</th>
+                        <th>Ride percentage</th>
+                        <th>Average trip distance</th>
+                    </tr>
+                </table>
+
+                <h2>Station Usage</h2>
+                <table id="usage_station_table">
+                    <tr style="background-color: lightgrey;">
+                        <th>Station name</th>
+                        <th>Average daily users</th>
+                    </tr>
+                </table>
             </div>
+            <div class="buttons">
+                <button id="btn_close_usage_modal">Back to transit report</button>
+            </div>
+
         </div>
         
         <div class="modal" id="confirm_line_modal">
