@@ -176,7 +176,7 @@ th {
     text-align: center;
 }
 
-#station_quick_rename_input {
+.hidden_rename {
     visibility: hidden;
     display: none;
     text-align: center;
@@ -193,21 +193,26 @@ th {
     border: 1px solid #99ba82;
 }
 
-.manage_line_bar_item {
+.manage_bar_item {
     width: 100%;
     margin-block: 5px;
     border: 1px solid grey;
     border-radius: 3px;
     padding: 5px;
     background-color: #ffeedb;
+    transition: 100ms cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
-.manage_line_bar_item p {
+.draggable_item {
+    cursor: grab;
+}
+
+.manage_bar_item p {
     display: inline-block;
     text-align: left;
 }
 
-.manage_line_bar_item button {
+.manage_bar_item button {
     text-align: right;
     float: right;
     margin-inline: 5px;

@@ -54,6 +54,23 @@
             </div>
         </div>
 
+        <div class="modal" id="line_modal">
+            <h1 id="line_name">Line 1</h1>
+            <input type="text" class="hidden_rename" id="manage_line_rename_input">
+
+            <h2>Line stops</h2>
+            <ul id="line_station_list">
+                <li class="manage_bar_item draggable_item" id="line_station_template">
+                    <p class="line_station_name">Station 1</p>
+                    <button class="btn_manage_delete_line red">Remove stop</button>
+                </li>
+            </ul>
+            
+            <div class="buttons">
+                <button id="btn_line_close">Close</button>
+            </div>
+        </div>
+
         <div class="modal" id="manage_modal">
             <h1>Manage Transit System</h1>
             <div><h3 class="result">Total Budget: </h3><p class="result" id="tb_manage_total_budget"></p></div>
@@ -61,7 +78,7 @@
             
             <h2>Transit Lines</h2>
             <ul id="manage_line_list">
-                <li class="manage_line_bar_item" id="manage_line_template">
+                <li class="manage_bar_item" id="manage_line_template">
                     <p class="manage_line_name"></p>
                     <button class="btn_manage_manage_line">Manage Line</button>
                     <button class="btn_manage_delete_line red">Delete Line</button>
@@ -125,7 +142,7 @@
 
         <div class="fixed_modal" id="station_quick_menu">
             <h1 id="station_quick_tb_name">Station menu</h1>
-            <input type="text" id="station_quick_rename_input">
+            <input type="text" class="hidden_rename" id="station_quick_rename_input">
             <!-- <button id="station_quick_manage">Manage station</button> -->
             <!-- <button id="station_quick_relocate">Relocate station</button> -->
             <button id="station_quick_rename">Rename station</button>
@@ -147,5 +164,6 @@
     <script src="TransitLine.js"></script>
     <script src="TransitStep.js"></script>
     <script src="TransitTrip.js"></script>
+    <script src="DraggableList.js"></script>
     <script src="main.js"></script>
 </html>
