@@ -978,6 +978,7 @@ function reloadLineModalStations(line) {
             line.removeStop(station);
             station.removeLine(line);
             reloadLineModalStations(line);
+            draggableList.refreshItems();
         });
 
         list.appendChild(line_bar);

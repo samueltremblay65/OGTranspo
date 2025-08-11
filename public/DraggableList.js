@@ -5,6 +5,10 @@ class DraggableList {
         this.data = data;
         this.items = Array.from(list.querySelectorAll(".draggable_item"));
 
+        this.mouseUpBindHandler = this.deselectFunction.bind(this);
+        this.mouseMoveBindHandler = this.mouseMoveFunction.bind(this);
+        this.mouseDownBindHandler = this.mouseDownFunction.bind(this);
+
         this.itemPositions = [];
         this.items.forEach(item => { 
             this.itemPositions.push(item.getBoundingClientRect());
@@ -15,16 +19,16 @@ class DraggableList {
         this.dragStart = null;
 
         this.items.forEach(item => {
-            item.addEventListener("mousedown", this.mouseDownFunction.bind(this, item));
+            item.addEventListener("mousedown", this.mouseDownBindHandler);
         });
 
         this.addDraggingListeners();
     }
 
     addDraggingListeners() {
-        this.list.addEventListener("mousemove", this.mouseMoveFunction.bind(this));
-        document.addEventListener("mouseup", this.deselectFunction.bind(this));
-        document.addEventListener("mouseleave", this.deselectFunction.bind(this));
+        this.list.addEventListener("mousemove", this.mouseMoveBindHandler);
+        document.addEventListener("mouseup", this.mouseUpBindHandler);
+        document.addEventListener("mouseleave", this.mouseUpBindHandler);
     }
 
     mouseMoveFunction(e) {
@@ -75,11 +79,11 @@ class DraggableList {
 
     }
 
-    mouseDownFunction(item, e) {
+    mouseDownFunction(e) {
         e.stopImmediatePropagation();
-        
+
         this.dragging = true;
-        this.selectedIndex = this.items.indexOf(item);
+        this.selectedIndex = this.items.indexOf(e.target);
         this.dragStart = e.clientY;
     }
 
@@ -97,13 +101,30 @@ class DraggableList {
     }
 
     removeAllEventListeners() {
-        document.removeEventListener("mouseup", this.deselectFunction);
-        document.removeEventListener("mouseleave", this.deselectFunction);
-        document.removeEventListener("mousemove", this.mouseMoveFunction);
+        this.list.removeEventListener("mousemove", this.mouseMoveBindHandler);
+        document.removeEventListener("mouseup", this.mouseUpBindHandler);
+        document.removeEventListener("mouseleave", this.mouseUpBindHandler);
         
         this.items.forEach(item => {
-            item.removeEventListener("mousedown", this.mouseDownFunction);
+            item.removeEventListener("mousedown", this.mouseDownBindHandler);
         })
 
+    }
+
+    refreshItems() {
+        this.items = Array.from(this.list.querySelectorAll(".draggable_item"));
+
+        this.itemPositions = [];
+        this.items.forEach(item => { 
+            this.itemPositions.push(item.getBoundingClientRect());
+            item.style.transform = "none";
+        });
+
+        this.dragging = false;
+        this.dragStart = null;
+
+        this.items.forEach(item => {
+            item.addEventListener("mousedown", this.mouseDownBindHandler);
+        });
     }
 }
