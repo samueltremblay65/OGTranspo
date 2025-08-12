@@ -63,7 +63,7 @@ class DraggableList {
         }
         else if(translate < 0 && this.selectedIndex > 0) {
             const offset = itemPosition.top - this.itemPositions[this.selectedIndex - 1].top;
-            for(let i = this.selectedIndex - 1; i > 0; i--) {
+            for(let i = this.selectedIndex - 1; i >= 0; i--) {
                 const selectedCenter = (item.getBoundingClientRect().top + item.getBoundingClientRect().bottom) / 2;
                 if(selectedCenter < this.itemPositions[i].bottom) {
                     this.items[i].style.transform = `translateY(${offset}px)`;
@@ -102,12 +102,17 @@ class DraggableList {
         });
         
         if(position != oldPosition) {
-            [this.data[oldPosition - 1], this.data[position - 1]] = [this.data[position - 1], this.data[oldPosition - 1]];
 
-            if(position < oldPosition) position--;
+            if(position < oldPosition && position == 0) {
+                selectedItem.remove();
+                this.list.appendChild(selectedItem);
+            } else {
+                if(position < oldPosition) position--;
+                this.items[position].after(selectedItem);
 
-            selectedItem.remove();
-            this.items[position].after(selectedItem);
+                let removed = this.data.splice(oldPosition, 1)[0];
+                this.data.splice(position, 0, removed);
+            }
 
             // Remove all transforms
             this.items.forEach(item => {

@@ -956,15 +956,12 @@ function showLineModal(line) {
 }
 
 function reloadLineModalStations(line) {
-    const line_modal = document.getElementById("line_modal");
-    const template = line_modal.querySelector(".manage_bar_item");
+    const template = document.getElementById("line_station_template");
     const list = document.getElementById("line_station_list");
 
-    while (list.childElementCount > 1) {
+    while (list.childElementCount > 0) {
         list.removeChild(list.lastElementChild);
     }
-
-    template.style.display = "inline-block";
 
     line.stops.forEach(station => {
         const line_bar = template.cloneNode(true);
@@ -983,8 +980,6 @@ function reloadLineModalStations(line) {
 
         list.appendChild(line_bar);
     });
-
-    template.style.display = "none";
 }
 
 function hideLineModal() {
