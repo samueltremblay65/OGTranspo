@@ -25,6 +25,8 @@ let selectedStation = null;
 let selectedLine = null;
 let displayedTrip = null;
 
+let draggableList = null;
+
 let color = 0;
 const LINE_COLORS = ['blue', 'green', 'yellow', 'orange','red','pink', 'brown', 'grey', "lime"];
 
@@ -374,11 +376,11 @@ let controls = {
     up: false, down: false, left: false, right: false
 }
 
-function getMousePos(canvas, evt) {
+function getMousePos(canvas, e) {
     var rect = canvas.getBoundingClientRect();
     return {
-        x: Math.round((evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width),
-        y: Math.round((evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height)
+        x: Math.round((e.clientX - rect.left) / (rect.right - rect.left) * canvas.width),
+        y: Math.round((e.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height)
     };
 }
 
@@ -435,6 +437,7 @@ document.getElementById("btn_zoom_in").addEventListener("click", (e) => {
 
 document.getElementById("btn_manage_system").addEventListener("click", (e) => {
     e.stopImmediatePropagation();
+    hideStationQuickMenu();
 
     if(mode == "view") showManageModal();
 });
@@ -471,6 +474,12 @@ document.getElementById("btn_simulate").addEventListener("click", (e) => {
     if(calculateTotalCost() > STARTING_BUDGET) return;
 
     simulate();
+});
+
+document.getElementById("btn_line_close").addEventListener("click", (e) => {
+    e.stopImmediatePropagation();
+
+    hideLineModal();
 });
 
 document.getElementById("btn_build_line_continue").addEventListener("click", function(e) {
@@ -608,6 +617,8 @@ function loadFromJson(json) {
 const new_transit_line_button = document.getElementById("btn_new_transit_line");
 new_transit_line_button.addEventListener("click", (e) => {
     e.stopImmediatePropagation();
+    hideStationQuickMenu();
+
     if(mode == "view") {
         hideInformationMenus();
         showBuildLineDialog();
@@ -728,7 +739,7 @@ document.getElementById("btn_budget_alert_dismiss").addEventListener("click", fu
     mode = "view";
     showMenuBarButtons("view");
     document.getElementById("budget_alert_modal").style.visibility = "hidden";
-})
+});
 
 function station_quick_showRename() {
     const rename_input = document.getElementById("station_quick_rename_input");
@@ -863,12 +874,14 @@ function hideUsageModal() {
 function showManageModal() {
     mode = "manage";
     showMenuBarButtons("modal");
-    document.getElementById("manage_modal").style.visibility = "visible";
+
+    const manage_modal = document.getElementById("manage_modal");
+    manage_modal.style.visibility = "visible";
 
     document.getElementById("tb_manage_total_budget").innerHTML = format_cost(STARTING_BUDGET);
     document.getElementById("tb_manage_available_budget").innerHTML = format_cost(STARTING_BUDGET - calculateTotalCost());
 
-    const template = document.querySelector(".manage_line_bar_item");
+    const template = manage_modal.querySelector(".manage_bar_item");
     const list = document.getElementById("manage_line_list");
 
     template.style.display = "inline-block";
@@ -892,6 +905,7 @@ function showManageModal() {
         line_bar.style.background = LINE_MENU_COLORS[LINE_COLORS.indexOf(line.color)];
 
         const btn_delete_line = line_bar.querySelector(".btn_manage_delete_line");
+        const btn_manage_line = line_bar.querySelector(".btn_manage_manage_line");
 
         btn_delete_line.addEventListener("click", function() {
             line.stops.forEach((stop) => {
@@ -907,17 +921,73 @@ function showManageModal() {
             updateBudgetDisplay(STARTING_BUDGET - calculateTotalCost());
         });
 
+        btn_manage_line.addEventListener("click", function(e) {
+            e.stopImmediatePropagation();
+            hideManageModal();
+            showLineModal(line);
+        });
+
         list.appendChild(line_bar);
     });
 
     template.style.display = "none";
-
 }
 
 function hideManageModal() {
     mode = "view";
     showMenuBarButtons("view");
     document.getElementById("manage_modal").style.visibility = "hidden";
+}
+
+function showLineModal(line) {
+    mode = "view";
+    showMenuBarButtons("modal");
+    selectedLine = line;
+
+    const line_modal = document.getElementById("line_modal");
+    line_modal.style.visibility = "visible";
+
+    const line_name = document.getElementById("line_name");
+    line_name.innerHTML = line.name;
+
+    reloadLineModalStations(line);
+
+    draggableList = new DraggableList(line.stops, document.getElementById("line_station_list"));
+}
+
+function reloadLineModalStations(line) {
+    const template = document.getElementById("line_station_template");
+    const list = document.getElementById("line_station_list");
+
+    while (list.childElementCount > 0) {
+        list.removeChild(list.lastElementChild);
+    }
+
+    line.stops.forEach(station => {
+        const line_bar = template.cloneNode(true);
+        const tb_station_name = line_bar.querySelector(".line_station_name");
+        tb_station_name.innerHTML = station.name;
+        line_bar.style.background = LINE_MENU_COLORS[LINE_COLORS.indexOf(line.color)];
+
+        const btn_remove_stop = line_bar.querySelector(".btn_manage_delete_line");
+
+        btn_remove_stop.addEventListener("click", function() {
+            line.removeStop(station);
+            station.removeLine(line);
+            reloadLineModalStations(line);
+            draggableList.refreshItems();
+        });
+
+        list.appendChild(line_bar);
+    });
+}
+
+function hideLineModal() {
+    mode = "view";
+    showMenuBarButtons("view");
+    document.getElementById("line_modal").style.visibility = "hidden";
+
+    draggableList.removeAllEventListeners();
 }
 
 function showBuildLineDialog() {
