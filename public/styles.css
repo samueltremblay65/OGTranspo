@@ -200,7 +200,6 @@ th {
     border-radius: 3px;
     padding: 5px;
     background-color: #ffeedb;
-    transition: 100ms cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
 .draggable_item {
@@ -212,8 +211,12 @@ th {
     text-align: left;
 }
 
-.manage_bar_item button {
+.manage_bar_item button, .manage_bar_item img {
     text-align: right;
     float: right;
     margin-inline: 5px;
+}
+
+.manage_bar_item img {
+    pointer-events: none;
 }

@@ -13,14 +13,11 @@ class DraggableList {
         this.items.forEach(item => { 
             this.itemPositions.push(item.getBoundingClientRect());
             item.style.transform = "none";
+            item.addEventListener("mousedown", this.mouseDownBindHandler);
         });
 
         this.dragging = false;
         this.dragStart = null;
-
-        this.items.forEach(item => {
-            item.addEventListener("mousedown", this.mouseDownBindHandler);
-        });
 
         this.addDraggingListeners();
     }
@@ -76,11 +73,12 @@ class DraggableList {
                 }
             }
         }
-
     }
 
     mouseDownFunction(e) {
         e.stopImmediatePropagation();
+
+        this.refreshItems();
 
         this.dragging = true;
         this.selectedIndex = this.items.indexOf(e.target);
@@ -89,15 +87,35 @@ class DraggableList {
 
     deselectFunction(e) {
         e.stopImmediatePropagation();
+
+        if(!this.dragging) return;
+
         // Move item to desired position in array, re-render the list
+        let position = -1;
+        let oldPosition = this.selectedIndex;
 
-        // Remove all transforms
+        const selectedItem = this.items[this.selectedIndex];
+        const selectedCenter = (selectedItem.getBoundingClientRect().top + selectedItem.getBoundingClientRect().bottom) / 2;
+
         this.items.forEach(item => {
-            item.style.transform = "";
+            if(selectedCenter > item.getBoundingClientRect().top) position++;
         });
+        
+        if(position != oldPosition) {
+            [this.data[oldPosition - 1], this.data[position - 1]] = [this.data[position - 1], this.data[oldPosition - 1]];
 
-        this.dragging = false;
-        this.selectedIndex = null;
+            if(position < oldPosition) position--;
+
+            selectedItem.remove();
+            this.items[position].after(selectedItem);
+
+            // Remove all transforms
+            this.items.forEach(item => {
+                item.style.transform = "";
+            });
+        }
+
+        this.refreshItems();
     }
 
     removeAllEventListeners() {
@@ -105,10 +123,13 @@ class DraggableList {
         document.removeEventListener("mouseup", this.mouseUpBindHandler);
         document.removeEventListener("mouseleave", this.mouseUpBindHandler);
         
+        this.removeItemEventListeners();
+    }
+
+    removeItemEventListeners() {
         this.items.forEach(item => {
             item.removeEventListener("mousedown", this.mouseDownBindHandler);
         })
-
     }
 
     refreshItems() {
@@ -116,15 +137,11 @@ class DraggableList {
 
         this.itemPositions = [];
         this.items.forEach(item => { 
-            this.itemPositions.push(item.getBoundingClientRect());
             item.style.transform = "none";
+            this.itemPositions.push(item.getBoundingClientRect());
         });
 
         this.dragging = false;
         this.dragStart = null;
-
-        this.items.forEach(item => {
-            item.addEventListener("mousedown", this.mouseDownBindHandler);
-        });
     }
 }
