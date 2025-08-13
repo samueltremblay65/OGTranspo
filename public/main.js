@@ -232,6 +232,12 @@ function undoAction(action) {
         showMenuBarButtons("view");
         action.station.location = action.oldLocation;
     }
+    else if(action.type == "reorder_line_stations") {
+        mode = "view";
+        let station = action.line.stops[action.newIndex];
+        action.line.stops.splice(action.oldIndex + (action.newIndex < action.oldIndex), 0, station);
+        action.line.stops.splice(action.newIndex + (action.newIndex > action.oldIndex), 1);
+    }
 }
 
 // Costing functions
@@ -952,7 +958,11 @@ function showLineModal(line) {
 
     reloadLineModalStations(line);
 
-    draggableList = new DraggableList(line.stops, document.getElementById("line_station_list"));
+    draggableList = new DraggableList(line.stops, document.getElementById("line_station_list"), lineStationReorderHandler);
+}
+
+function lineStationReorderHandler(oldIndex, newIndex) {
+    actionStack.push({type: "reorder_line_stations", line: selectedLine, oldIndex: oldIndex, newIndex: newIndex});
 }
 
 function reloadLineModalStations(line) {
