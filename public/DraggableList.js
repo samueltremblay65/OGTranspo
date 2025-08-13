@@ -1,9 +1,11 @@
 class DraggableList {
-    constructor(data, list) {
+    constructor(data, list, reorderHandler) {
         this.selectedIndex = null;
         this.list = list;
         this.data = data;
         this.items = Array.from(list.querySelectorAll(".draggable_item"));
+
+        this.reorderHandler = reorderHandler;
 
         this.mouseUpBindHandler = this.deselectFunction.bind(this);
         this.mouseMoveBindHandler = this.mouseMoveFunction.bind(this);
@@ -13,6 +15,9 @@ class DraggableList {
         this.items.forEach(item => { 
             this.itemPositions.push(item.getBoundingClientRect());
             item.style.transform = "none";
+        });
+
+        this.items.forEach(item => {
             item.addEventListener("mousedown", this.mouseDownBindHandler);
         });
 
@@ -102,17 +107,18 @@ class DraggableList {
         });
         
         if(position != oldPosition) {
-
             if(position < oldPosition && position == 0) {
                 selectedItem.remove();
-                this.list.appendChild(selectedItem);
+                this.list.prepend(selectedItem);
             } else {
-                if(position < oldPosition) position--;
-                this.items[position].after(selectedItem);
-
-                let removed = this.data.splice(oldPosition, 1)[0];
-                this.data.splice(position, 0, removed);
+                selectedItem.remove();
+                this.items[position - (oldPosition > position)].after(selectedItem);
             }
+
+            let removed = this.data.splice(oldPosition, 1)[0];
+            this.data.splice(position, 0, removed);
+
+            this.reorderHandler(oldPosition, position);
 
             // Remove all transforms
             this.items.forEach(item => {
