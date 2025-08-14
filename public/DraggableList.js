@@ -146,6 +146,12 @@ class DraggableList {
     refreshItems() {
         this.items = Array.from(this.list.querySelectorAll(".draggable_item"));
 
+        this.removeItemEventListeners();
+        
+        this.items.forEach(item => {
+            item.addEventListener("mousedown", this.mouseDownBindHandler);
+        });
+
         this.itemPositions = [];
         this.items.forEach(item => { 
             item.style.transform = "none";

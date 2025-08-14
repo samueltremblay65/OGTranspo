@@ -12,7 +12,9 @@ class Station {
     }
 
     removeLine(line) {
-        this.lines.splice(this.lines.indexOf(line), 1);
+        const index = this.lines.indexOf(line);
+        this.lines.splice(index, 1);
+        return index;
     }
 
     sharesLine(station) {

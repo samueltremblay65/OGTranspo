@@ -25,7 +25,7 @@ let selectedStation = null;
 let selectedLine = null;
 let displayedTrip = null;
 
-let draggableList = null;
+let lineStationList = null;
 
 let color = 0;
 const LINE_COLORS = ['blue', 'green', 'yellow', 'orange','red','pink', 'brown', 'grey', "lime"];
@@ -191,6 +191,7 @@ function removeStation(station) {
 }
 
 function undoAction(action) {
+    // TODO: reload modals when undoing actions
     if(action.type == "add_station") {
         const index = stations.indexOf(action.station);
         stations.splice(index, 1);
@@ -210,6 +211,16 @@ function undoAction(action) {
         setBuildButtonText("view");
         showMenuBarButtons("view");
     }
+    else if(action.type == "delete_line") {
+        mode = "view";
+        transit_lines.splice(action.index, 0, action.line);
+
+        action.line.stops.forEach(station => {
+            station.addLine(action.line);
+        });
+
+        if(document.getElementById("manage_modal").style.visibility == "visible") showManageModal();
+    }
     else if(action.type == "finish_line") {
         mode = "build";
         selectedLine = action.line;
@@ -226,6 +237,13 @@ function undoAction(action) {
             line.restoreStop(action.station, index);
         });
     }
+    else if(action.type == "remove_stop") {
+        action.line.stops.splice(action.index, 0, action.station);
+        action.station.addLine(action.line);
+        if(document.getElementById("line_modal").style.visibility == "visible") {
+            reloadLineModalStations(action.line);
+        }
+    }
     else if(action.type == "move_station") {
         mode = "view";
         setBuildButtonText("view");
@@ -237,6 +255,9 @@ function undoAction(action) {
         let station = action.line.stops[action.newIndex];
         action.line.stops.splice(action.oldIndex + (action.newIndex < action.oldIndex), 0, station);
         action.line.stops.splice(action.newIndex + (action.newIndex > action.oldIndex), 1);
+
+        reloadLineModalStations(action.line);
+        lineStationList.refreshItems();
     }
 }
 
@@ -394,6 +415,7 @@ function showMenuBarButtons(menu_mode) {
     switch(menu_mode){
         case "view":
             document.getElementById("btn_new_transit_line").style.display = "inline";
+            document.getElementById("btn_cancel_transit_line").style.display = "none";
             document.getElementById("btn_transit_density").style.display = "inline";
             document.getElementById("btn_save").style.display = "inline";
             document.getElementById("btn_simulate").style.display = "inline";
@@ -406,18 +428,20 @@ function showMenuBarButtons(menu_mode) {
             break;
         case "build":
             document.getElementById("btn_new_transit_line").style.display = "inline";
+            document.getElementById("btn_cancel_transit_line").style.display = "inline";
             document.getElementById("btn_transit_density").style.display = "inline";
             document.getElementById("btn_save").style.display = "none";
             document.getElementById("btn_simulate").style.display = "none";
             document.getElementById("btn_manage_system").style.display = "none";
             document.getElementById("btn_settings").style.display = "none";
             document.getElementById("btn_save").style.display = "none";
-            document.getElementById("btn_load").style.display = "inline";
+            document.getElementById("btn_load").style.display = "none";
             document.getElementById("btn_zoom_out").style.display = "inline";
             document.getElementById("btn_zoom_in").style.display = "inline";
             break;
         case "modal":
             document.getElementById("btn_new_transit_line").style.display = "none";
+            document.getElementById("btn_cancel_transit_line").style.display = "none";
             document.getElementById("btn_transit_density").style.display = "none";
             document.getElementById("btn_save").style.display = "none";
             document.getElementById("btn_manage_system").style.display = "none";
@@ -466,23 +490,32 @@ document.getElementById("btn_close_usage_modal").addEventListener("click", (e) =
 
 document.getElementById("btn_close_manage_modal").addEventListener("click", hideManageModal);
 
-document.getElementById("btn_transit_density").addEventListener("click", (e) => {
+document.getElementById("btn_transit_density").addEventListener("click", e => {
     e.stopImmediatePropagation();
 
     transit_density_map = !transit_density_map;
 });
 
-document.getElementById("btn_simulate").addEventListener("click", (e) => {
+document.getElementById("btn_cancel_transit_line").addEventListener("click", e => {
+    e.stopImmediatePropagation();
+
+    cancelBuildLine();
+}); 
+
+document.getElementById("btn_simulate").addEventListener("click", e => {
     e.stopImmediatePropagation();
     if(mode != "view") return;
-    hideInformationMenus();
+    hideAllMenus();
 
-    if(calculateTotalCost() > STARTING_BUDGET) return;
+    if(calculateTotalCost() > STARTING_BUDGET) {
+        showToastMessage("Current system is over budget");
+        return;
+    };
 
     simulate();
 });
 
-document.getElementById("btn_line_close").addEventListener("click", (e) => {
+document.getElementById("btn_line_close").addEventListener("click", e => {
     e.stopImmediatePropagation();
 
     hideLineModal();
@@ -587,13 +620,24 @@ function saveText(text, filename){
   a.click()
 }
 
+function showToastMessage(message) {
+    const toast = document.getElementById("toast");
+    toast.innerHTML = message;
+    toast.classList.add("visible");
+
+
+    setTimeout(() => {
+        toast.classList.remove("visible");
+    }, 3000);
+}
+
 function reset() {
     transit_lines.splice(0, transit_lines.length);
     stations.splice(0, stations.length);
     mode = "view";
     showMenuBarButtons("view");
     setBuildButtonText("view");
-    hideInformationMenus();
+    hideAllMenus();
     hideConfirmLineDialog();
     updateBudgetDisplay(STARTING_BUDGET);
     actionStack = [];
@@ -626,7 +670,7 @@ new_transit_line_button.addEventListener("click", (e) => {
     hideStationQuickMenu();
 
     if(mode == "view") {
-        hideInformationMenus();
+        hideAllMenus();
         showBuildLineDialog();
     }
     else if(mode == "move") {
@@ -703,7 +747,13 @@ document.getElementById("btn_confirm_line_continue").addEventListener("click", f
     if(budget_remaining < 0) showBudgetAlert();
 });
 
-document.getElementById("btn_confirm_line_cancel").addEventListener("click", function() {
+document.getElementById("btn_confirm_line_cancel").addEventListener("click", e => {
+    e.stopImmediatePropagation();
+
+    cancelBuildLine();
+});
+
+function cancelBuildLine() {
     let action;
     do {
         action = actionStack.pop();
@@ -713,8 +763,8 @@ document.getElementById("btn_confirm_line_cancel").addEventListener("click", fun
     mode = "view";
     showMenuBarButtons("view");
     setBuildButtonText("view");
-    hideConfirmLineDialog();
-});
+    hideAllMenus();
+}
 
 document.getElementById("station_quick_rename").addEventListener("click", function() {
     actionStack.push({type:"rename_station", station: selectedStation});
@@ -916,10 +966,13 @@ function showManageModal() {
         btn_delete_line.addEventListener("click", function() {
             line.stops.forEach((stop) => {
                 stop.removeLine(stop);
+
                 if(stop.lines.length == 0) {
                     stations.splice(stations.indexOf(stop), 1);
                 }
             });
+
+            actionStack.push({type: "delete_line", line: line, index: transit_lines.indexOf(line)});
 
             transit_lines.splice(transit_lines.indexOf(line), 1);
             showManageModal();
@@ -958,7 +1011,7 @@ function showLineModal(line) {
 
     reloadLineModalStations(line);
 
-    draggableList = new DraggableList(line.stops, document.getElementById("line_station_list"), lineStationReorderHandler);
+    lineStationList = new DraggableList(line.stops, document.getElementById("line_station_list"), lineStationReorderHandler);
 }
 
 function lineStationReorderHandler(oldIndex, newIndex) {
@@ -982,10 +1035,12 @@ function reloadLineModalStations(line) {
         const btn_remove_stop = line_bar.querySelector(".btn_manage_delete_line");
 
         btn_remove_stop.addEventListener("click", function() {
+            actionStack.push({type: "remove_stop", line: line, station: station, index: line.stops.indexOf(station)});
+
             line.removeStop(station);
             station.removeLine(line);
             reloadLineModalStations(line);
-            draggableList.refreshItems();
+            lineStationList.refreshItems();
         });
 
         list.appendChild(line_bar);
@@ -997,7 +1052,7 @@ function hideLineModal() {
     showMenuBarButtons("view");
     document.getElementById("line_modal").style.visibility = "hidden";
 
-    draggableList.removeAllEventListeners();
+    if(lineStationList != null) lineStationList.removeAllEventListeners();
 }
 
 function showBuildLineDialog() {
@@ -1095,11 +1150,17 @@ function hideStationQuickMenu() {
     name_tb.style.visibility = "hidden";
 }
 
-function hideInformationMenus() {
+function hideAllMenus() {
+    hideBuildLineDialog();
+    hideConfirmLineDialog();
+    hideLineModal();
+    hideManageModal();
     hideSimulationDialog();
     hideStationQuickMenu();
-    mode = "view";
+    hideUsageModal();
     showMenuBarButtons("view");
+
+    mode = "view";
 }
 
 game_map.onload = function() {

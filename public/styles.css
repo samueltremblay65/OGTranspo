@@ -193,6 +193,29 @@ th {
     border: 1px solid #99ba82;
 }
 
+.ui_message {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 10px;
+    background-color: #ffd09a;
+    padding: 10px;
+    font-family: inherit;
+    font-size: small;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out, visibility 0s 0.5s;
+}
+
+.ui_message.visible {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+}
+
+
+
 .manage_bar_item {
     width: 100%;
     margin-block: 5px;
@@ -221,6 +244,6 @@ th {
     pointer-events: none;
 }
 
-.station_item {
+.station_item p {
     font-size: smaller;
 }

@@ -17,6 +17,7 @@
     <div id="map_container">
         <!-- <div id="map"></div> -->
         <button class="game_button" id="btn_new_transit_line">New Transit Line</button>
+        <button class="game_button" id="btn_cancel_transit_line" style="display: none;">Cancel Build</button>
         <button class="game_button" id="btn_manage_system">Manage Transit System</button>
         <button class="game_button" id="btn_transit_density">Commuter Map</button>
         <!--     <button class="game_button" id="btn_neighborhoods">View neighborhoods</button> -->
@@ -30,6 +31,8 @@
         <input type="file" id="load_file_input" style="display: none">
 
         <div class="ui_bottom" id="budget_bar"><h3 class="result">Budget: </h3><p class="result" id="budget"></p></div>
+        
+        <div class="ui_message" id="toast">Random message</div>
 
         <div class="modal" id="simulation_modal">
             <h1>Transit Report</h1>
@@ -60,7 +63,7 @@
 
             <h2>Line stops</h2>
             <ul id="line_station_list">
-                <li class="manage_bar_item draggable_item" id="line_station_template">
+                <li class="manage_bar_item draggable_item station_item" id="line_station_template">
                     <p class="line_station_name">Station 1</p>
                     <button class="btn_manage_delete_line red">Remove stop</button>
                     <img src="reorder_icon.png" height="24px" alt="reorder_icon" draggable="false">
@@ -73,7 +76,7 @@
         </div>
 
         <div class="modal" id="list_template_modal">
-            <li class="manage_bar_item draggable_item station_item" id="line_station_template">
+            <li class="manage_bar_item draggable_item" id="line_station_template">
                 <p class="line_station_name">Station 1</p>
                 <button class="btn_manage_delete_line red">Remove stop</button>
                 <img src="reorder_icon.png" height="20px" alt="reorder_icon" draggable="false">
