@@ -2,6 +2,8 @@ let canvas = document.getElementById("canvas");
 let game_container = document.getElementById("map_container");
 let ctx = canvas.getContext("2d");
 
+const loading_screen = document.getElementById("loading_screen");
+
 const game_map = new Image();
 game_map.src = "map.png";
 
@@ -25,12 +27,17 @@ let selectedStation = null;
 let selectedLine = null;
 let displayedTrip = null;
 
-let draggableList = null;
+let lineStationList = null;
 
 let color = 0;
 const LINE_COLORS = ['blue', 'green', 'yellow', 'orange','red','pink', 'brown', 'grey', "lime"];
 
 const LINE_MENU_COLORS = ["#b9caed", "#94d1a7", "#f7f4b2", "#ffcc73", "#e59e9e","#ffe3f1", "#cfc4b8", "#dbdbdb", "#dbf5ba"];
+
+// Loading screen
+canvas.style.visibility = "hidden";
+game_container.style.visibility = "hidden";
+loading_screen.classList.add("visible");
 
 // Drawing functions
 function drawBackground() {
@@ -191,6 +198,7 @@ function removeStation(station) {
 }
 
 function undoAction(action) {
+    // TODO: reload modals when undoing actions
     if(action.type == "add_station") {
         const index = stations.indexOf(action.station);
         stations.splice(index, 1);
@@ -210,6 +218,16 @@ function undoAction(action) {
         setBuildButtonText("view");
         showMenuBarButtons("view");
     }
+    else if(action.type == "delete_line") {
+        mode = "view";
+        transit_lines.splice(action.index, 0, action.line);
+
+        action.line.stops.forEach(station => {
+            station.addLine(action.line);
+        });
+
+        if(document.getElementById("manage_modal").style.visibility == "visible") showManageModal();
+    }
     else if(action.type == "finish_line") {
         mode = "build";
         selectedLine = action.line;
@@ -226,6 +244,13 @@ function undoAction(action) {
             line.restoreStop(action.station, index);
         });
     }
+    else if(action.type == "remove_stop") {
+        action.line.stops.splice(action.index, 0, action.station);
+        action.station.addLine(action.line);
+        if(document.getElementById("line_modal").style.visibility == "visible") {
+            reloadLineModalStations(action.line);
+        }
+    }
     else if(action.type == "move_station") {
         mode = "view";
         setBuildButtonText("view");
@@ -237,6 +262,9 @@ function undoAction(action) {
         let station = action.line.stops[action.newIndex];
         action.line.stops.splice(action.oldIndex + (action.newIndex < action.oldIndex), 0, station);
         action.line.stops.splice(action.newIndex + (action.newIndex > action.oldIndex), 1);
+
+        reloadLineModalStations(action.line);
+        lineStationList.refreshItems();
     }
 }
 
@@ -394,6 +422,7 @@ function showMenuBarButtons(menu_mode) {
     switch(menu_mode){
         case "view":
             document.getElementById("btn_new_transit_line").style.display = "inline";
+            document.getElementById("btn_cancel_transit_line").style.display = "none";
             document.getElementById("btn_transit_density").style.display = "inline";
             document.getElementById("btn_save").style.display = "inline";
             document.getElementById("btn_simulate").style.display = "inline";
@@ -406,18 +435,20 @@ function showMenuBarButtons(menu_mode) {
             break;
         case "build":
             document.getElementById("btn_new_transit_line").style.display = "inline";
+            document.getElementById("btn_cancel_transit_line").style.display = "inline";
             document.getElementById("btn_transit_density").style.display = "inline";
             document.getElementById("btn_save").style.display = "none";
             document.getElementById("btn_simulate").style.display = "none";
             document.getElementById("btn_manage_system").style.display = "none";
             document.getElementById("btn_settings").style.display = "none";
             document.getElementById("btn_save").style.display = "none";
-            document.getElementById("btn_load").style.display = "inline";
+            document.getElementById("btn_load").style.display = "none";
             document.getElementById("btn_zoom_out").style.display = "inline";
             document.getElementById("btn_zoom_in").style.display = "inline";
             break;
         case "modal":
             document.getElementById("btn_new_transit_line").style.display = "none";
+            document.getElementById("btn_cancel_transit_line").style.display = "none";
             document.getElementById("btn_transit_density").style.display = "none";
             document.getElementById("btn_save").style.display = "none";
             document.getElementById("btn_manage_system").style.display = "none";
@@ -466,23 +497,32 @@ document.getElementById("btn_close_usage_modal").addEventListener("click", (e) =
 
 document.getElementById("btn_close_manage_modal").addEventListener("click", hideManageModal);
 
-document.getElementById("btn_transit_density").addEventListener("click", (e) => {
+document.getElementById("btn_transit_density").addEventListener("click", e => {
     e.stopImmediatePropagation();
 
     transit_density_map = !transit_density_map;
 });
 
-document.getElementById("btn_simulate").addEventListener("click", (e) => {
+document.getElementById("btn_cancel_transit_line").addEventListener("click", e => {
+    e.stopImmediatePropagation();
+
+    cancelBuildLine();
+}); 
+
+document.getElementById("btn_simulate").addEventListener("click", e => {
     e.stopImmediatePropagation();
     if(mode != "view") return;
-    hideInformationMenus();
+    hideAllMenus();
 
-    if(calculateTotalCost() > STARTING_BUDGET) return;
+    if(calculateTotalCost() > STARTING_BUDGET) {
+        showToastMessage("Current system is over budget");
+        return;
+    };
 
     simulate();
 });
 
-document.getElementById("btn_line_close").addEventListener("click", (e) => {
+document.getElementById("btn_line_close").addEventListener("click", e => {
     e.stopImmediatePropagation();
 
     hideLineModal();
@@ -502,6 +542,8 @@ document.getElementById("btn_build_line_continue").addEventListener("click", fun
     mode = "build";
     showMenuBarButtons("build");
     setBuildButtonText("build");
+    showToastMessage("Place stations by clicking the desired location on the map");
+    setTimeout(() => { showToastMessage("When you are done, click on the Finish Transit Line option above"); }, 3500);
 });
 
 document.getElementById("btn_build_line_cancel").addEventListener("click", function(e) {
@@ -587,13 +629,24 @@ function saveText(text, filename){
   a.click()
 }
 
+function showToastMessage(message) {
+    const toast = document.getElementById("toast");
+    toast.innerHTML = message;
+    toast.classList.add("visible");
+
+
+    setTimeout(() => {
+        toast.classList.remove("visible");
+    }, 3000);
+}
+
 function reset() {
     transit_lines.splice(0, transit_lines.length);
     stations.splice(0, stations.length);
     mode = "view";
     showMenuBarButtons("view");
     setBuildButtonText("view");
-    hideInformationMenus();
+    hideAllMenus();
     hideConfirmLineDialog();
     updateBudgetDisplay(STARTING_BUDGET);
     actionStack = [];
@@ -626,7 +679,7 @@ new_transit_line_button.addEventListener("click", (e) => {
     hideStationQuickMenu();
 
     if(mode == "view") {
-        hideInformationMenus();
+        hideAllMenus();
         showBuildLineDialog();
     }
     else if(mode == "move") {
@@ -703,7 +756,13 @@ document.getElementById("btn_confirm_line_continue").addEventListener("click", f
     if(budget_remaining < 0) showBudgetAlert();
 });
 
-document.getElementById("btn_confirm_line_cancel").addEventListener("click", function() {
+document.getElementById("btn_confirm_line_cancel").addEventListener("click", e => {
+    e.stopImmediatePropagation();
+
+    cancelBuildLine();
+});
+
+function cancelBuildLine() {
     let action;
     do {
         action = actionStack.pop();
@@ -713,8 +772,8 @@ document.getElementById("btn_confirm_line_cancel").addEventListener("click", fun
     mode = "view";
     showMenuBarButtons("view");
     setBuildButtonText("view");
-    hideConfirmLineDialog();
-});
+    hideAllMenus();
+}
 
 document.getElementById("station_quick_rename").addEventListener("click", function() {
     actionStack.push({type:"rename_station", station: selectedStation});
@@ -732,6 +791,8 @@ document.getElementById("station_quick_move").addEventListener("click", function
     mode = "move";
     showMenuBarButtons("build");
     setBuildButtonText("move");
+    showToastMessage("Click on the desired new location to move the station");
+
 });
 
 document.getElementById("station_quick_remove").addEventListener("click", function() {
@@ -764,7 +825,8 @@ function station_quick_rename() {
     const rename_input = document.getElementById("station_quick_rename_input");
 
     const new_name = rename_input.value.trim();
-    selectedStation.name = new_name;
+
+    if(new_name != null && new_name != "" && isUniqueName(new_name)) selectedStation.name = new_name;
 
     rename_input.style.display = "none";
     rename_input.style.visibility = "hidden";
@@ -774,6 +836,14 @@ function station_quick_rename() {
     station_name_tb.innerHTML = selectedStation.name;
     station_name_tb.style.display = "block";
     station_name_tb.style.visibility = "visible";
+}
+
+function isUniqueName(name) {
+    let isUnique = true;
+    stations.forEach(station => {
+        if(station.name == name) return false;
+    })
+    return isUnique;
 }
 
 function showSimulationDialog(statistics) {
@@ -833,7 +903,7 @@ function populateUsageDialog(statistics) {
     // Sort stations by usage by constructing array and sorting it
     const usage_array = [];
     Object.keys(statistics.station_usage).forEach(station_name => {
-        const daily_usage = statistics.station_usage[station_name];
+        const daily_usage = statistics.station_usage[station_name] + Math.round(Math.random() * 100);
         usage_array.push({station_name: station_name, daily_usage: daily_usage});
     });
 
@@ -916,10 +986,13 @@ function showManageModal() {
         btn_delete_line.addEventListener("click", function() {
             line.stops.forEach((stop) => {
                 stop.removeLine(stop);
+
                 if(stop.lines.length == 0) {
                     stations.splice(stations.indexOf(stop), 1);
                 }
             });
+
+            actionStack.push({type: "delete_line", line: line, index: transit_lines.indexOf(line)});
 
             transit_lines.splice(transit_lines.indexOf(line), 1);
             showManageModal();
@@ -958,7 +1031,7 @@ function showLineModal(line) {
 
     reloadLineModalStations(line);
 
-    draggableList = new DraggableList(line.stops, document.getElementById("line_station_list"), lineStationReorderHandler);
+    lineStationList = new DraggableList(line.stops, document.getElementById("line_station_list"), lineStationReorderHandler);
 }
 
 function lineStationReorderHandler(oldIndex, newIndex) {
@@ -982,10 +1055,12 @@ function reloadLineModalStations(line) {
         const btn_remove_stop = line_bar.querySelector(".btn_manage_delete_line");
 
         btn_remove_stop.addEventListener("click", function() {
+            actionStack.push({type: "remove_stop", line: line, station: station, index: line.stops.indexOf(station)});
+
             line.removeStop(station);
             station.removeLine(line);
             reloadLineModalStations(line);
-            draggableList.refreshItems();
+            lineStationList.refreshItems();
         });
 
         list.appendChild(line_bar);
@@ -997,7 +1072,7 @@ function hideLineModal() {
     showMenuBarButtons("view");
     document.getElementById("line_modal").style.visibility = "hidden";
 
-    draggableList.removeAllEventListeners();
+    if(lineStationList != null) lineStationList.removeAllEventListeners();
 }
 
 function showBuildLineDialog() {
@@ -1095,14 +1170,31 @@ function hideStationQuickMenu() {
     name_tb.style.visibility = "hidden";
 }
 
-function hideInformationMenus() {
+function hideAllMenus() {
+    hideBuildLineDialog();
+    hideConfirmLineDialog();
+    hideLineModal();
+    hideManageModal();
     hideSimulationDialog();
     hideStationQuickMenu();
-    mode = "view";
+    hideUsageModal();
     showMenuBarButtons("view");
+
+    mode = "view";
 }
 
 game_map.onload = function() {
+    const load_screen_time = 3000;
+
+    setTimeout(() => {
+        loading_screen.classList.remove("visible");
+    }, load_screen_time - 1000);
+
+    setTimeout(() => {
+        canvas.style.visibility = "visible";
+        game_container.style.visibility = "visible";
+    }, load_screen_time);
+
     game_map_canvas.width = game_map.width;
     game_map_canvas.height = game_map.height;
     game_map_canvas.getContext('2d').drawImage(game_map, 0, 0, game_map.width, game_map.height);
@@ -1151,7 +1243,7 @@ function isMenuOpen() {
 // Simulation code
 function simulate() {
     let transit_trips = [];
-    for(let i = 0; i < 250; i++)  {
+    for(let i = 0; i < 200; i++)  {
         let commuter = commuters[Math.floor(Math.random() * commuters.length)];
         const trip = findOptimalTransitTrip(commuter.location, commuter.destination.location);
         transit_trips.push(trip);
@@ -1204,9 +1296,11 @@ function calculateTransitStatistics(trips) {
                 metro_line_usage[step.line.name].trips++;
                 metro_line_usage[step.line.name].total_distance += step.start.location.distanceTo(step.end.location) * M_PER_PIXEL;
                 
-                const USAGE_MULTIPLIER = 100;
+                const USAGE_MULTIPLIER = 400;
                 station_usage[step.start.name] += USAGE_MULTIPLIER;
-                station_usage[step.end.name] += USAGE_MULTIPLIER;
+                if(trip.steps.indexOf(step) == trip.steps.length - 2) {
+                    station_usage[step.end.name] += USAGE_MULTIPLIER;
+                }
             }
         });
 
