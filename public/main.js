@@ -2,6 +2,8 @@ let canvas = document.getElementById("canvas");
 let game_container = document.getElementById("map_container");
 let ctx = canvas.getContext("2d");
 
+const loading_screen = document.getElementById("loading_screen");
+
 const game_map = new Image();
 game_map.src = "map.png";
 
@@ -31,6 +33,11 @@ let color = 0;
 const LINE_COLORS = ['blue', 'green', 'yellow', 'orange','red','pink', 'brown', 'grey', "lime"];
 
 const LINE_MENU_COLORS = ["#b9caed", "#94d1a7", "#f7f4b2", "#ffcc73", "#e59e9e","#ffe3f1", "#cfc4b8", "#dbdbdb", "#dbf5ba"];
+
+// Loading screen
+canvas.style.visibility = "hidden";
+game_container.style.visibility = "hidden";
+loading_screen.classList.add("visible");
 
 // Drawing functions
 function drawBackground() {
@@ -535,6 +542,8 @@ document.getElementById("btn_build_line_continue").addEventListener("click", fun
     mode = "build";
     showMenuBarButtons("build");
     setBuildButtonText("build");
+    showToastMessage("Place stations by clicking the desired location on the map");
+    setTimeout(() => { showToastMessage("When you are done, click on the Finish Transit Line option above"); }, 3500);
 });
 
 document.getElementById("btn_build_line_cancel").addEventListener("click", function(e) {
@@ -782,6 +791,8 @@ document.getElementById("station_quick_move").addEventListener("click", function
     mode = "move";
     showMenuBarButtons("build");
     setBuildButtonText("move");
+    showToastMessage("Click on the desired new location to move the station");
+
 });
 
 document.getElementById("station_quick_remove").addEventListener("click", function() {
@@ -814,7 +825,8 @@ function station_quick_rename() {
     const rename_input = document.getElementById("station_quick_rename_input");
 
     const new_name = rename_input.value.trim();
-    selectedStation.name = new_name;
+
+    if(new_name != null && new_name != "" && isUniqueName(new_name)) selectedStation.name = new_name;
 
     rename_input.style.display = "none";
     rename_input.style.visibility = "hidden";
@@ -824,6 +836,14 @@ function station_quick_rename() {
     station_name_tb.innerHTML = selectedStation.name;
     station_name_tb.style.display = "block";
     station_name_tb.style.visibility = "visible";
+}
+
+function isUniqueName(name) {
+    let isUnique = true;
+    stations.forEach(station => {
+        if(station.name == name) return false;
+    })
+    return isUnique;
 }
 
 function showSimulationDialog(statistics) {
@@ -883,7 +903,7 @@ function populateUsageDialog(statistics) {
     // Sort stations by usage by constructing array and sorting it
     const usage_array = [];
     Object.keys(statistics.station_usage).forEach(station_name => {
-        const daily_usage = statistics.station_usage[station_name];
+        const daily_usage = statistics.station_usage[station_name] + Math.round(Math.random() * 100);
         usage_array.push({station_name: station_name, daily_usage: daily_usage});
     });
 
@@ -1164,6 +1184,17 @@ function hideAllMenus() {
 }
 
 game_map.onload = function() {
+    const load_screen_time = 3000;
+
+    setTimeout(() => {
+        loading_screen.classList.remove("visible");
+    }, load_screen_time - 1000);
+
+    setTimeout(() => {
+        canvas.style.visibility = "visible";
+        game_container.style.visibility = "visible";
+    }, load_screen_time);
+
     game_map_canvas.width = game_map.width;
     game_map_canvas.height = game_map.height;
     game_map_canvas.getContext('2d').drawImage(game_map, 0, 0, game_map.width, game_map.height);
@@ -1212,7 +1243,7 @@ function isMenuOpen() {
 // Simulation code
 function simulate() {
     let transit_trips = [];
-    for(let i = 0; i < 250; i++)  {
+    for(let i = 0; i < 200; i++)  {
         let commuter = commuters[Math.floor(Math.random() * commuters.length)];
         const trip = findOptimalTransitTrip(commuter.location, commuter.destination.location);
         transit_trips.push(trip);
@@ -1265,9 +1296,11 @@ function calculateTransitStatistics(trips) {
                 metro_line_usage[step.line.name].trips++;
                 metro_line_usage[step.line.name].total_distance += step.start.location.distanceTo(step.end.location) * M_PER_PIXEL;
                 
-                const USAGE_MULTIPLIER = 100;
+                const USAGE_MULTIPLIER = 400;
                 station_usage[step.start.name] += USAGE_MULTIPLIER;
-                station_usage[step.end.name] += USAGE_MULTIPLIER;
+                if(trip.steps.indexOf(step) == trip.steps.length - 2) {
+                    station_usage[step.end.name] += USAGE_MULTIPLIER;
+                }
             }
         });
 

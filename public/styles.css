@@ -1,18 +1,58 @@
 :root {
-    --red: #e67663;
+    --red: #e98d7c;
     --green:#d4f0b6;
+    --yellow: #f1d167;
 }
-
 
 #map {
     height: 500px;
     width: 750px;
 }
 
+#loading_screen {
+    position: fixed;
+    left: 50%;
+    top: 45%;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, -50%);
+    transition: opacity 1s ease-in-out, visibility 0s 0.5s;
+}
+
+#loading_screen.visible {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.loader {
+    /* Basic styling for your loader (e.g., width, height, border, border-radius for a circle) */
+    width: 50px;
+    height: 50px;
+    margin-inline: auto;
+    margin-top: -120px;
+    border: 3px solid #f3f3f3; /* Light grey border */
+    border-top: 3px solid #777777; /* Blue border on top for the "spinning" effect */
+    border-radius: 50%; /* Makes it a circle */
+
+    /* Apply the animation */
+    animation: spin 1s linear infinite;
+}
+
+/* Define the keyframe animation */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg); /* Start at 0 degrees rotation */
+    }
+    100% {
+        transform: rotate(360deg); /* Rotate a full 360 degrees */
+    }
+}
+
 #map_container {
     position: fixed;
     left: 50%;
-    top: 55%;
+    top: 50%;
     height: 600px;
     width: 900px;
     transform: translate(-50%, -50%);
@@ -42,7 +82,7 @@ canvas {
     border-radius: 10px;
     position: fixed;
     left: 50%;
-    top: 55%;
+    top: 50%;
     transform: translate(-50%, -50%);
     height: 600px;
     width: 900px;
@@ -98,6 +138,8 @@ li {
 ul {
     padding-inline-start: 0;
     margin: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 table, th, td {
@@ -172,6 +214,14 @@ th {
     background-color: var(--green);
 }
 
+.green:hover {
+    border-color: darkgreen;
+}
+
+.yellow {
+    background-color: var(--yellow);
+}
+
 #station_quick_menu {
     text-align: center;
 }
@@ -199,7 +249,7 @@ th {
     left: 50%;
     transform: translateX(-50%);
     border-radius: 10px;
-    background-color: #ffd09a;
+    background-color: #f7eee6;
     padding: 10px;
     font-family: inherit;
     font-size: small;
@@ -214,8 +264,6 @@ th {
     transition: opacity 0.5s ease-in-out;
 }
 
-
-
 .manage_bar_item {
     width: 100%;
     margin-block: 5px;
@@ -223,6 +271,7 @@ th {
     border-radius: 3px;
     padding: 5px;
     background-color: #ffeedb;
+    box-sizing: border-box;
 }
 
 .draggable_item {
@@ -246,4 +295,9 @@ th {
 
 .station_item p {
     font-size: smaller;
+}
+
+#line_station_list {
+    height: 300px;
+    overflow-y: scroll;
 }
