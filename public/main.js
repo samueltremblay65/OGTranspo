@@ -11,7 +11,7 @@ const game_map_canvas = document.createElement('canvas');
 
 let scaling = 1.0;
 
-let center = {x: 850, y: 200};
+let center = new Point(850, 200);
 
 const transit_lines = [];
 const stations = [];
@@ -25,7 +25,6 @@ let transit_density_map = false;
 
 let selectedStation = null;
 let selectedLine = null;
-let displayedTrip = null;
 
 let lineStationList = null;
 
@@ -74,57 +73,6 @@ function drawTransitLine(line) {
         ctx.arc(canvas_location.x, canvas_location.y, 5, 0, 2 * Math.PI);
         ctx.fill();
     });
-}
-
-function drawDisplayedTrip() {
-    if(displayedTrip == null) return;
-    displayedTrip.steps.forEach(step => {
-        ctx.strokeStyle = "#7efcb9";
-        ctx.lineWidth = 6;
-        ctx.lineCap = "round";
-        ctx.setLineDash([10]);
-
-        ctx.beginPath();
-
-        let start;
-        let end;
-
-        if(step.mode == "metro") {
-            const stops = step.line.getStopsBetween(step.start, step.end);
-
-            ctx.moveTo(start.location.x, start.location.y);
-
-            stops.forEach(stop => {
-                const location = convertToCanvasCoordinates(stop.location);
-                ctx.lineTo(location.x, location.y);
-            });
-        }
-        else {
-            if(step.start instanceof Station) {
-                start = convertToCanvasCoordinates(step.start.location);
-            }
-            else if (step.start instanceof Point) {
-                start = convertToCanvasCoordinates(step.start);
-            }
-
-            if(step.end instanceof Station) {
-                end = convertToCanvasCoordinates(step.end.location);
-            }
-            else if (step.end instanceof Point) {
-                end = convertToCanvasCoordinates(step.end);
-            }
-
-            ctx.moveTo(start.x, start.y);
-            ctx.lineTo(end.x, end.y);
-            ctx.stroke();
-        }
-    });
-
-    ctx.setLineDash([]);
-}
-
-function displayTransitTrip(trip) {
-    displayedTrip = trip;
 }
 
 function showCommuters() {
@@ -323,9 +271,10 @@ function populateNeighborhood() {
                 const y = Math.round(Math.random() * game_map.height);
 
                 const location = new Point(x, y);
+                const commuter_destination = destinations[Math.floor(Math.random() * destinations.length)].location.evenlyDistributedPointAround(destination.radius / M_PER_PIXEL);
 
-                if(getGameMapColor(location) == "white") {
-                    commuters.push(new Commuter(location, destinations[Math.floor(Math.random() * destinations.length)]));
+                if(getGameMapColor(location) == "white" && getGameMapColor(commuter_destination) == "white") {
+                    commuters.push(new Commuter(location, commuter_destination));
                     population++;
                 }
             }
@@ -341,8 +290,10 @@ function populateNeighborhood() {
                     location = destination.location.randomPointAround(destination.radius / M_PER_PIXEL);
                 }
 
-                if(getGameMapColor(location) != "water") {
-                    commuters.push(new Commuter(location, destinations[Math.floor(Math.random() * destinations.length)]));
+                const commuter_destination = destinations[Math.floor(Math.random() * destinations.length)].location.evenlyDistributedPointAround(destination.radius / M_PER_PIXEL);
+
+                if(getGameMapColor(location) != "water" && getGameMapColor(commuter_destination) != "water") {
+                    commuters.push(new Commuter(location, commuter_destination));
                     population++;
                 }
             }
@@ -709,10 +660,11 @@ game_container.addEventListener("click", (e) => {
 
     if(location_viewing) {
         console.log(game_location);
+        console.log(`new Point(${Math.round(game_location.x)}, ${Math.round(game_location.y)});`);
         console.log(getGameMapColor(game_location));
     }
 
-    if(selectedStation != null && mode != "move") {
+    if(document.getElementById("station_quick_menu").visibility != "hidden") {
         hideStationQuickMenu();
     }
 
@@ -723,11 +675,14 @@ game_container.addEventListener("click", (e) => {
         setBuildButtonText("view");
         showMenuBarButtons("view");
 
+         updateBudgetDisplay(STARTING_BUDGET - calculateTotalCost());
+
         actionStack.push({type:"move_station", station: selectedStation, oldLocation: oldLocation});
     }else if(mode == "view") {
         stations.forEach(station => {
             if(game_location.distanceTo(station.location) < 100 / M_PER_PIXEL) {
-                showStationQuickMenu(canvas_location, station);            }
+                showStationQuickMenu(station);            
+            }
         });
     }
 
@@ -902,9 +857,9 @@ function populateUsageDialog(statistics) {
 
     // Sort stations by usage by constructing array and sorting it
     const usage_array = [];
-    Object.keys(statistics.station_usage).forEach(station_name => {
-        const daily_usage = statistics.station_usage[station_name] + Math.round(Math.random() * 100);
-        usage_array.push({station_name: station_name, daily_usage: daily_usage});
+    Object.keys(statistics.station_usage).forEach(station_id => {
+        const daily_usage = statistics.station_usage[station_id] + (stations.length > 5) * Math.floor(Math.random() * 100);
+        usage_array.push({station_id: station_id, daily_usage: daily_usage});
     });
 
     usage_array.sort((a, b) => {
@@ -917,13 +872,24 @@ function populateUsageDialog(statistics) {
         const station_name_cell = row.insertCell(0);
         const daily_users_cell = row.insertCell(1);
 
-        station_name_cell.innerHTML = element.station_name;
+        const station = getStationByID(element.station_id);
+
+        station_name_cell.innerHTML = station.name;
         daily_users_cell.innerHTML = element.daily_usage;
 
         parity = !parity;
         if(parity) row.style.background = "#ffe0ab";
 
         station_table.appendChild(row);
+
+        row.addEventListener("click", (e) => {
+            e.stopImmediatePropagation();
+            scaling = 1;
+            moveTo(station.location);
+            hideAllMenus();
+            selectedStation = station;
+            showStationQuickMenu(station);
+        });
     });
 }
 
@@ -1129,7 +1095,9 @@ function showBudgetAlert() {
     document.getElementById("budget_alert_modal").style.visibility = "visible";
 }
 
-function showStationQuickMenu(location, station) {
+function showStationQuickMenu(station) {
+    const location = convertToCanvasCoordinates(station.location);
+
     mode = "view";
     showMenuBarButtons("view");
     selectedStation = station;
@@ -1143,11 +1111,11 @@ function showStationQuickMenu(location, station) {
         quickStationMenu.style.top = (location.y + 20) + "px";
     }
     else {
-        quickStationMenu.style.top = (location.y - 140) + "px";
+        quickStationMenu.style.top = (location.y - 40 - quickStationMenu.clientHeight) + "px";
     }
 
-    let x = Math.max(20, location.x - 100);
-    x = Math.min(canvas.width - 20 - quickStationMenu.clientWidth, x);
+    let x = Math.max(20, location.x - quickStationMenu.clientWidth / 2);
+    x = Math.min(canvas.width - 20 - quickStationMenu.clientWidth / 2, x);
 
     quickStationMenu.style.left = x + "px";
 
@@ -1214,8 +1182,6 @@ game_map.onload = function() {
         drawBackground();
         if(transit_density_map) showCommuters();
         drawTransitLines();
-        drawDisplayedTrip();
-
     }, 1000 / FPS);
 }
 
@@ -1245,7 +1211,7 @@ function simulate() {
     let transit_trips = [];
     for(let i = 0; i < 200; i++)  {
         let commuter = commuters[Math.floor(Math.random() * commuters.length)];
-        const trip = findOptimalTransitTrip(commuter.location, commuter.destination.location);
+        const trip = findOptimalTransitTrip(commuter.location, commuter.destination);
         transit_trips.push(trip);
     }
 
@@ -1253,8 +1219,13 @@ function simulate() {
 
     showSimulationDialog(statistics);
     populateUsageDialog(statistics);
-    // displayTransitTrip(statistics.longest_trip);
     return statistics.averageTime;
+}
+
+function moveTo(gameLocation) {
+    const x = gameLocation.x - (canvas.width / 2 / scaling);
+    const y = gameLocation.y - (canvas.height / 2 / scaling);
+    center = new Point(x, y);
 }
 
 function calculateTransitStatistics(trips) {
@@ -1275,7 +1246,7 @@ function calculateTransitStatistics(trips) {
     });
 
     stations.forEach(station => {
-        station_usage[station.name] = 0;
+        station_usage[station.id] = 0;
     });
 
     trips.forEach(trip => {
@@ -1296,10 +1267,10 @@ function calculateTransitStatistics(trips) {
                 metro_line_usage[step.line.name].trips++;
                 metro_line_usage[step.line.name].total_distance += step.start.location.distanceTo(step.end.location) * M_PER_PIXEL;
                 
-                const USAGE_MULTIPLIER = 400;
-                station_usage[step.start.name] += USAGE_MULTIPLIER;
+                const USAGE_MULTIPLIER = 381;
+                station_usage[step.start.id] += USAGE_MULTIPLIER;
                 if(trip.steps.indexOf(step) == trip.steps.length - 2) {
-                    station_usage[step.end.name] += USAGE_MULTIPLIER;
+                    station_usage[step.end.id] += USAGE_MULTIPLIER;
                 }
             }
         });
@@ -1334,6 +1305,21 @@ function calculateTransitStatistics(trips) {
         station_usage: station_usage, lineUsage: metro_line_usage, total_trips: trips.length, 
         longest_trip: longest_trip, transit_trip_percentage: transit_trip_percentage
     };
+}
+
+function getStationByName(name) {
+    stations.forEach(station => {
+        if(station.name == name) return station;
+    });
+    return -1;
+}
+
+function getStationByID(id) {
+    let match = null;
+    stations.forEach(station => {
+        if(station.id == id) match = station;
+    });
+    return match;
 }
 
 function findOptimalTransitTrip(location1, location2) {
