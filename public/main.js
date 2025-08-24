@@ -184,7 +184,6 @@ function undoAction(action) {
         setBuildButtonText("build");
     }
     else if(action.type == "remove_station") {
-        mode = "view";
         stations.push(action.station);
         action.line_indexes.forEach(element => {
             const line = element.line;
@@ -193,6 +192,7 @@ function undoAction(action) {
             action.station.lines.push(line);
             line.restoreStop(action.station, index);
         });
+        // TODO: if in line menu, refresh station list
     }
     else if(action.type == "remove_stop") {
         action.line.stops.splice(action.index, 0, action.station);
@@ -206,15 +206,22 @@ function undoAction(action) {
         setBuildButtonText("view");
         showMenuBarButtons("view");
         action.station.location = action.oldLocation;
+        updateBudgetDisplay(STARTING_BUDGET - calculateTotalCost());
     }
     else if(action.type == "reorder_line_stations") {
-        mode = "view";
         let station = action.line.stops[action.newIndex];
         action.line.stops.splice(action.oldIndex + (action.newIndex < action.oldIndex), 0, station);
         action.line.stops.splice(action.newIndex + (action.newIndex > action.oldIndex), 1);
 
         reloadLineModalStations(action.line);
         lineStationList.refreshItems();
+        updateBudgetDisplay(STARTING_BUDGET - calculateTotalCost());
+    }
+    else if(action.type == "line_rename") {
+        action.line.name = action.oldName;
+        if(mode == "manage") {
+            refreshManageModalLineList();
+        }
     }
 }
 
@@ -828,9 +835,10 @@ function hideLineRename() {
 function lineRename() {
     const rename_input = document.getElementById("manage_line_rename_input");
 
-    const new_name = rename_input.value.trim();
+    const newName = rename_input.value.trim();
+    const oldName = document.getElementById("line_name").innerHTML;
 
-    if(new_name != null && new_name != "" && isUniqueLineName(new_name)) selectedLine.name = new_name;
+    if(newName != null && newName != "" && isUniqueLineName(newName)) selectedLine.name = newName;
 
     rename_input.style.display = "none";
     rename_input.style.visibility = "hidden";
@@ -842,6 +850,8 @@ function lineRename() {
     line_name.innerHTML = selectedLine.name;
     line_name.style.display = "inline";
     line_name.style.visibility = "visible";
+
+    actionStack.push({type: "line_rename", line: selectedLine, oldName: oldName});
 }
 
 function station_quick_showRename() {
@@ -1012,6 +1022,10 @@ function showManageModal() {
     document.getElementById("tb_manage_total_budget").innerHTML = format_cost(STARTING_BUDGET);
     document.getElementById("tb_manage_available_budget").innerHTML = format_cost(STARTING_BUDGET - calculateTotalCost());
 
+    refreshManageModalLineList();
+}
+
+function refreshManageModalLineList() {
     const template = manage_modal.querySelector(".manage_bar_item");
     const list = document.getElementById("manage_line_list");
 
@@ -1125,6 +1139,7 @@ function showLineModal(line) {
 
 function lineStationReorderHandler(oldIndex, newIndex) {
     actionStack.push({type: "reorder_line_stations", line: selectedLine, oldIndex: oldIndex, newIndex: newIndex});
+    updateBudgetDisplay(STARTING_BUDGET - calculateTotalCost());
 }
 
 function reloadLineModalStations(line) {
