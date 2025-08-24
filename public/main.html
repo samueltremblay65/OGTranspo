@@ -65,17 +65,20 @@
             <div class="inline">
                 <h1 id="line_name">Line 1</h1>
                 <input type="text" class="hidden_rename" id="manage_line_rename_input">
-                <img id="line_edit_name" src="edit_icon.png" alt="edit line name" width="32px">
+                <img class="inline_icon" id="line_edit_name" src="edit_icon.png" alt="edit line name">
+                <img class="inline_icon" id="line_cancel_edit_name" src="delete_icon.png" alt="cancel edit line name">
             </div>
 
-            <h2>Line stops</h2>
-            <ul id="line_station_list">
-                <li class="manage_bar_item draggable_item station_item" id="line_station_template">
-                    <p class="line_station_name">Station 1</p>
-                    <button class="btn_manage_delete_line yellow">Remove stop</button>
-                    <img src="reorder_icon.png" height="24px" alt="reorder_icon" draggable="false">
-                </li>
-            </ul>
+            <div class="modal_scroll_container">
+                <h2>Line stops</h2>
+                <ul id="line_station_list">
+                    <li class="manage_bar_item draggable_item station_item" id="line_station_template">
+                        <p class="line_station_name">Station 1</p>
+                        <button class="btn_manage_delete_line yellow">Remove stop</button>
+                        <img src="reorder_icon.png" height="24px" alt="reorder_icon" draggable="false">
+                    </li>
+                </ul>
+            </div>
             
             <div class="buttons">
                 <button id="btn_line_close">Close</button>

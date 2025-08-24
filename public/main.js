@@ -515,10 +515,16 @@ document.getElementById("station_quick_menu").addEventListener("click", function
     e.stopImmediatePropagation();
 });
 
-document.getElementById("line_name").addEventListener("doubleclick", e => {
+document.getElementById("line_name").addEventListener("dblclick", e => {
     e.stopImmediatePropagation();
 
     showLineRename();
+});
+
+document.getElementById("line_cancel_edit_name").addEventListener("click", e => {
+    e.stopImmediatePropagation();
+
+    hideLineRename();
 });
 
 document.getElementById("line_edit_name").addEventListener("click", e => {
@@ -787,6 +793,15 @@ document.getElementById("btn_budget_alert_dismiss").addEventListener("click", fu
     document.getElementById("budget_alert_modal").style.visibility = "hidden";
 });
 
+document.getElementById("line_modal").addEventListener("click", e => {
+    e.stopImmediatePropagation();
+
+    if(document.getElementById("manage_line_rename_input").style.display != "none") {
+        rename_input();
+    }
+
+});
+
 function showLineRename() {
     const rename_input = document.getElementById("manage_line_rename_input");
     rename_input.style.display = "inline";
@@ -795,12 +810,15 @@ function showLineRename() {
 
     rename_input.focus();
 
+    document.getElementById("line_cancel_edit_name").style.display = "inline";
+
     document.getElementById("line_name").style.display = "none";
 }
 
 function hideLineRename() {
     const rename_input = document.getElementById("manage_line_rename_input");
     rename_input.style.display = "none";
+    document.getElementById("line_cancel_edit_name").style.display = "none";
 
     document.getElementById("line_name").style.display = "inline";
 }
@@ -815,6 +833,8 @@ function lineRename() {
     rename_input.style.display = "none";
     rename_input.style.visibility = "hidden";
     rename_input.value = "";
+
+    document.getElementById("line_cancel_edit_name").style.display = "none";
 
     const line_name = document.getElementById("line_name");
     line_name.innerHTML = selectedLine.name;

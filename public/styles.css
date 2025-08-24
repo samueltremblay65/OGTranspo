@@ -138,6 +138,7 @@ li {
 ul {
     padding-inline-start: 0;
     margin: 0;
+    margin-bottom: 10px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -269,6 +270,20 @@ th {
     transition: opacity 0.5s ease-in-out;
 }
 
+.inline_icon {
+    width: 24px;
+    margin-inline-start: 10px;
+    align-self: center;
+}
+
+.inline_icon:hover {
+    transform: scale(1.05);
+}
+
+.inline_icon:active {
+    transform: scale(1.05);
+}
+
 .manage_bar_item {
     width: 100%;
     margin-block: 5px;
@@ -311,27 +326,8 @@ th {
     display: inline;
 }
 
-#line_station_list{
-    height: 300px;
-    overflow-y: scroll;
-}
-
 #line_name:hover {
     cursor: text;
-}
-
-#line_edit_name {
-    width: 24px;
-    margin-inline-start: 10px;
-    align-self: center;
-}
-
-#line_edit_name:hover {
-    transform: scale(1.05);
-}
-
-#line_edit_name:active {
-    transform: scale(1.05);
 }
 
 #manage_line_rename_input {
