@@ -9,7 +9,6 @@ class TransitTrip {
         this.steps.forEach(step => {
             if(step.mode == "walk") time += step.walk_time;
             if(step.mode == "metro") time += step.line.calculateJourneyTime(step.start, step.end);
-            time += TRANSFER_TIME;
         });
         return time;
     }
