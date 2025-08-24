@@ -1,4 +1,5 @@
 class DraggableList {
+    // Custom reordering list class, still some bugs to fix
     constructor(data, list, reorderHandler) {
         this.selectedIndex = null;
         this.list = list;

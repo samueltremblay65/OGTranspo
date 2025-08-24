@@ -62,17 +62,29 @@
         </div>
 
         <div class="modal" id="line_modal">
-            <h1 id="line_name">Line 1</h1>
-            <input type="text" class="hidden_rename" id="manage_line_rename_input">
+            <div class="inline">
+                <h1 id="line_name">Line 1</h1>
+                <input type="text" class="hidden_rename" id="manage_line_rename_input">
+                <img class="inline_icon" id="line_edit_name" src="edit_icon.png" alt="edit line name">
+                <img class="inline_icon" id="line_cancel_edit_name" src="delete_icon.png" alt="cancel edit line name">
+            </div>
 
-            <h2>Line stops</h2>
-            <ul id="line_station_list">
-                <li class="manage_bar_item draggable_item station_item" id="line_station_template">
-                    <p class="line_station_name">Station 1</p>
-                    <button class="btn_manage_delete_line yellow">Remove stop</button>
-                    <img src="reorder_icon.png" height="24px" alt="reorder_icon" draggable="false">
-                </li>
-            </ul>
+            <div class="modal_scroll_container">
+                <h2>Map color</h2>
+                <div id="line_color_picker"></div>
+
+                <h2>Transit type</h2>
+                <div id="line_transit_type_picker"></div>
+
+                <h2>Line stops</h2>
+                <ul id="line_station_list">
+                    <li class="manage_bar_item draggable_item station_item" id="line_station_template">
+                        <p class="line_station_name">Station 1</p>
+                        <button class="btn_manage_delete_line yellow">Remove stop</button>
+                        <img src="reorder_icon.png" height="24px" alt="reorder_icon" draggable="false">
+                    </li>
+                </ul>
+            </div>
             
             <div class="buttons">
                 <button id="btn_line_close">Close</button>
@@ -89,17 +101,19 @@
 
         <div class="modal" id="manage_modal">
             <h1>Manage Transit System</h1>
-            <div><h3 class="result">Total Budget: </h3><p class="result" id="tb_manage_total_budget"></p></div>
-            <div><h3 class="result">Available Budget: </h3><p class="result" id="tb_manage_available_budget"></p></div>
-            
-            <h2>Transit Lines</h2>
-            <ul id="manage_line_list">
-                <li class="manage_bar_item" id="manage_line_template">
-                    <p class="manage_line_name"></p>
-                    <button class="btn_manage_delete_line yellow">Delete Line</button>
-                    <button class="btn_manage_manage_line">Manage Line</button>
-                </li>
-            </ul>
+            <div class="modal_scroll_container">
+                <div><h3 class="result">Total Budget: </h3><p class="result" id="tb_manage_total_budget"></p></div>
+                <div><h3 class="result">Available Budget: </h3><p class="result" id="tb_manage_available_budget"></p></div>
+                
+                <h2>Transit Lines</h2>
+                <ul id="manage_line_list">
+                    <li class="manage_bar_item" id="manage_line_template">
+                        <p class="manage_line_name"></p>
+                        <button class="btn_manage_delete_line yellow">Delete Line</button>
+                        <button class="btn_manage_manage_line">Manage Line</button>
+                    </li>
+                </ul>
+            </div>
 
             <div class="buttons" style="margin-top: 5px;">
                 <button id="btn_manage_reset" class="red">Reset Transit System</button>
@@ -109,25 +123,28 @@
 
         <div class="modal" id="usage_modal">
             <h1>Transit Usage Statistics</h1>
-            <p id="usage_empty_message" style="display: none;">The transit system is currently empty. Add transit lines to improve transit times.</p>
-            <div id="usage_tables">
-                <h2>Line Usage</h2>
-                <table id="usage_line_table">
-                    <tr style="background-color: lightgrey;">
-                        <th>Line name</th>
-                        <th>Ride percentage</th>
-                        <th>Average trip distance</th>
-                    </tr>
-                </table>
+            <div class="modal_scroll_container">
+                <p id="usage_empty_message" style="display: none;">The transit system is currently empty. Add transit lines to improve transit times.</p>
+                <div id="usage_tables">
+                    <h2>Line Usage</h2>
+                    <table id="usage_line_table">
+                        <tr style="background-color: lightgrey;">
+                            <th>Line name</th>
+                            <th>Ride percentage</th>
+                            <th>Average trip distance</th>
+                        </tr>
+                    </table>
 
-                <h2>Station Usage</h2>
-                <table id="usage_station_table">
-                    <tr style="background-color: lightgrey;">
-                        <th>Station name</th>
-                        <th>Average daily users</th>
-                    </tr>
-                </table>
+                    <h2>Station Usage</h2>
+                    <table id="usage_station_table">
+                        <tr style="background-color: lightgrey;">
+                            <th>Station name</th>
+                            <th>Average daily users</th>
+                        </tr>
+                    </table>
+                </div>
             </div>
+
             <div class="buttons">
                 <button id="btn_close_usage_modal">Back to transit report</button>
             </div>
@@ -171,15 +188,18 @@
     <canvas id="canvas" width="900px" height="600px" style="visibility: hidden;"></canvas>
 </body>
     <!-- prettier-ignore -->
+
     <script src="Parameters.js"></script>
     <script src="Point.js"></script>
+    <script src="DraggableList.js"></script>
+    <script src="ColorPicker.js"></script>
+    <script src="TextOptionPicker.js"></script>
     <script src="Destination.js"></script>
     <script src="destinations.js"></script>
     <script src="Commuter.js"></script>
     <script src="Station.js"></script>
     <script src="TransitLine.js"></script>
     <script src="TransitStep.js"></script>
-    <script src="TransitTrip.js"></script>
-    <script src="DraggableList.js"></script>
+    <script src="TransitTrip.js"></script>\
     <script src="main.js"></script>
 </html>
