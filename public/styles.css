@@ -174,8 +174,13 @@ th {
     visibility: hidden;
     text-align: left;
     width: 450px;
-    max-height: 500px;
+
+}
+
+.modal_scroll_container {
+    max-height: 450px;
     overflow-y: scroll;
+    margin-bottom: 10px;
 }
 
 .fixed_modal {
@@ -215,7 +220,7 @@ th {
 }
 
 .green:hover {
-    border-color: darkgreen;
+    border-color: #99ba82;
 }
 
 .yellow {
@@ -297,7 +302,7 @@ th {
     font-size: smaller;
 }
 
-#line_station_list {
+#line_station_list{
     height: 300px;
     overflow-y: scroll;
 }

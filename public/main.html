@@ -89,17 +89,19 @@
 
         <div class="modal" id="manage_modal">
             <h1>Manage Transit System</h1>
-            <div><h3 class="result">Total Budget: </h3><p class="result" id="tb_manage_total_budget"></p></div>
-            <div><h3 class="result">Available Budget: </h3><p class="result" id="tb_manage_available_budget"></p></div>
-            
-            <h2>Transit Lines</h2>
-            <ul id="manage_line_list">
-                <li class="manage_bar_item" id="manage_line_template">
-                    <p class="manage_line_name"></p>
-                    <button class="btn_manage_delete_line yellow">Delete Line</button>
-                    <button class="btn_manage_manage_line">Manage Line</button>
-                </li>
-            </ul>
+            <div class="modal_scroll_container">
+                <div><h3 class="result">Total Budget: </h3><p class="result" id="tb_manage_total_budget"></p></div>
+                <div><h3 class="result">Available Budget: </h3><p class="result" id="tb_manage_available_budget"></p></div>
+                
+                <h2>Transit Lines</h2>
+                <ul id="manage_line_list">
+                    <li class="manage_bar_item" id="manage_line_template">
+                        <p class="manage_line_name"></p>
+                        <button class="btn_manage_delete_line yellow">Delete Line</button>
+                        <button class="btn_manage_manage_line">Manage Line</button>
+                    </li>
+                </ul>
+            </div>
 
             <div class="buttons" style="margin-top: 5px;">
                 <button id="btn_manage_reset" class="red">Reset Transit System</button>
@@ -109,25 +111,28 @@
 
         <div class="modal" id="usage_modal">
             <h1>Transit Usage Statistics</h1>
-            <p id="usage_empty_message" style="display: none;">The transit system is currently empty. Add transit lines to improve transit times.</p>
-            <div id="usage_tables">
-                <h2>Line Usage</h2>
-                <table id="usage_line_table">
-                    <tr style="background-color: lightgrey;">
-                        <th>Line name</th>
-                        <th>Ride percentage</th>
-                        <th>Average trip distance</th>
-                    </tr>
-                </table>
+            <div class="modal_scroll_container">
+                <p id="usage_empty_message" style="display: none;">The transit system is currently empty. Add transit lines to improve transit times.</p>
+                <div id="usage_tables">
+                    <h2>Line Usage</h2>
+                    <table id="usage_line_table">
+                        <tr style="background-color: lightgrey;">
+                            <th>Line name</th>
+                            <th>Ride percentage</th>
+                            <th>Average trip distance</th>
+                        </tr>
+                    </table>
 
-                <h2>Station Usage</h2>
-                <table id="usage_station_table">
-                    <tr style="background-color: lightgrey;">
-                        <th>Station name</th>
-                        <th>Average daily users</th>
-                    </tr>
-                </table>
+                    <h2>Station Usage</h2>
+                    <table id="usage_station_table">
+                        <tr style="background-color: lightgrey;">
+                            <th>Station name</th>
+                            <th>Average daily users</th>
+                        </tr>
+                    </table>
+                </div>
             </div>
+
             <div class="buttons">
                 <button id="btn_close_usage_modal">Back to transit report</button>
             </div>
