@@ -5,6 +5,7 @@ class TransitLine {
     this.stops = [];
     this.train_speed = train_speed;
     this.stop_time = stop_time;
+    this.type = "Metro";
 
     if(id != null) this.id = id;
     else this.id = crypto.randomUUID();

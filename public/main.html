@@ -70,6 +70,12 @@
             </div>
 
             <div class="modal_scroll_container">
+                <h2>Map color</h2>
+                <div id="line_color_picker"></div>
+
+                <h2>Transit type</h2>
+                <div id="line_transit_type_picker"></div>
+
                 <h2>Line stops</h2>
                 <ul id="line_station_list">
                     <li class="manage_bar_item draggable_item station_item" id="line_station_template">
@@ -182,15 +188,18 @@
     <canvas id="canvas" width="900px" height="600px" style="visibility: hidden;"></canvas>
 </body>
     <!-- prettier-ignore -->
+
     <script src="Parameters.js"></script>
     <script src="Point.js"></script>
+    <script src="DraggableList.js"></script>
+    <script src="ColorPicker.js"></script>
+    <script src="TextOptionPicker.js"></script>
     <script src="Destination.js"></script>
     <script src="destinations.js"></script>
     <script src="Commuter.js"></script>
     <script src="Station.js"></script>
     <script src="TransitLine.js"></script>
     <script src="TransitStep.js"></script>
-    <script src="TransitTrip.js"></script>
-    <script src="DraggableList.js"></script>
+    <script src="TransitTrip.js"></script>\
     <script src="main.js"></script>
 </html>

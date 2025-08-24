@@ -27,6 +27,8 @@ let selectedStation = null;
 let selectedLine = null;
 
 let lineStationList = null;
+let lineColorPicker = null;
+let lineTransitTypePicker = null;
 
 let color = 0;
 const LINE_COLORS = ['blue', 'green', 'yellow', 'orange','red','pink', 'brown', 'grey', "lime"];
@@ -1073,9 +1075,12 @@ function hideManageModal() {
 
 function showLineModal(line) {
     hideAllMenus();
+
     mode = "view";
     showMenuBarButtons("modal");
+
     hideLineRename();
+
     selectedLine = line;
 
     const line_modal = document.getElementById("line_modal");
@@ -1084,9 +1089,38 @@ function showLineModal(line) {
     const line_name = document.getElementById("line_name");
     line_name.innerHTML = line.name;
 
-    reloadLineModalStations(line);
+    // Line color picker
+    const color_picker_container = document.getElementById("line_color_picker");
 
+    if(lineColorPicker == null) {
+        lineColorPicker = new ColorPicker(color_picker_container, LINE_COLORS, line.color, selectLineColor);
+    }
+    else {
+        lineColorPicker.refresh(line.color);
+    }
+
+    // Text option picker for transit type
+    const transitTypePickerContainer = document.getElementById("line_transit_type_picker");
+
+    if(lineTransitTypePicker == null) {
+        const options = ["Metro", "Tram", "Streetcar"];
+        lineTransitTypePicker = new TextOptionPicker(transitTypePickerContainer, options, "Metro", selectTransitType);
+    }
+    else {
+        lineTransitTypePicker.refresh(line.type);
+    }
+
+    // Line station list
+    reloadLineModalStations(line);
     lineStationList = new DraggableList(line.stops, document.getElementById("line_station_list"), lineStationReorderHandler);
+
+    function selectLineColor(color) {
+        selectedLine.color = color;
+    }
+
+    function selectTransitType(type) {
+        selectedLine.type = type;
+    }
 }
 
 function lineStationReorderHandler(oldIndex, newIndex) {
