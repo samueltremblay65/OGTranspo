@@ -333,6 +333,13 @@ function checkKey(e) {
         const action = actionStack.pop();
         if(action != null) undoAction(action);
     }
+
+    // Enter key
+    if (e.keyCode == 13) {
+        if(document.getElementById("manage_line_rename_input").style.display != "none") {
+            lineRename();
+        }
+    }
 }
 
 function checkKeyUp(e) {
@@ -506,6 +513,23 @@ document.getElementById("btn_build_line_cancel").addEventListener("click", funct
 
 document.getElementById("station_quick_menu").addEventListener("click", function(e) {
     e.stopImmediatePropagation();
+});
+
+document.getElementById("line_name").addEventListener("doubleclick", e => {
+    e.stopImmediatePropagation();
+
+    showLineRename();
+});
+
+document.getElementById("line_edit_name").addEventListener("click", e => {
+    e.stopImmediatePropagation();
+
+    if(document.getElementById("manage_line_rename_input").style.display != "none") {
+        lineRename();
+    }
+    else {
+        showLineRename();
+    }
 });
 
 document.getElementById("btn_save").addEventListener("click", function(e) {
@@ -763,6 +787,41 @@ document.getElementById("btn_budget_alert_dismiss").addEventListener("click", fu
     document.getElementById("budget_alert_modal").style.visibility = "hidden";
 });
 
+function showLineRename() {
+    const rename_input = document.getElementById("manage_line_rename_input");
+    rename_input.style.display = "inline";
+    rename_input.style.visibility = "visible";
+    rename_input.setAttribute("placeholder", selectedLine.name);
+
+    rename_input.focus();
+
+    document.getElementById("line_name").style.display = "none";
+}
+
+function hideLineRename() {
+    const rename_input = document.getElementById("manage_line_rename_input");
+    rename_input.style.display = "none";
+
+    document.getElementById("line_name").style.display = "inline";
+}
+
+function lineRename() {
+    const rename_input = document.getElementById("manage_line_rename_input");
+
+    const new_name = rename_input.value.trim();
+
+    if(new_name != null && new_name != "" && isUniqueLineName(new_name)) selectedLine.name = new_name;
+
+    rename_input.style.display = "none";
+    rename_input.style.visibility = "hidden";
+    rename_input.value = "";
+
+    const line_name = document.getElementById("line_name");
+    line_name.innerHTML = selectedLine.name;
+    line_name.style.display = "inline";
+    line_name.style.visibility = "visible";
+}
+
 function station_quick_showRename() {
     const rename_input = document.getElementById("station_quick_rename_input");
     rename_input.style.display = "block";
@@ -781,7 +840,7 @@ function station_quick_rename() {
 
     const new_name = rename_input.value.trim();
 
-    if(new_name != null && new_name != "" && isUniqueName(new_name)) selectedStation.name = new_name;
+    if(new_name != null && new_name != "" && isUniqueStationName(new_name)) selectedStation.name = new_name;
 
     rename_input.style.display = "none";
     rename_input.style.visibility = "hidden";
@@ -793,7 +852,15 @@ function station_quick_rename() {
     station_name_tb.style.visibility = "visible";
 }
 
-function isUniqueName(name) {
+function isUniqueLineName(name) {
+    let isUnique = true;
+    transit_lines.forEach(line => {
+        if(line.name == name) return false;
+    })
+    return isUnique;
+}
+
+function isUniqueStationName(name) {
     let isUnique = true;
     stations.forEach(station => {
         if(station.name == name) return false;
@@ -985,8 +1052,10 @@ function hideManageModal() {
 }
 
 function showLineModal(line) {
+    hideAllMenus();
     mode = "view";
     showMenuBarButtons("modal");
+    hideLineRename();
     selectedLine = line;
 
     const line_modal = document.getElementById("line_modal");
@@ -1034,9 +1103,13 @@ function reloadLineModalStations(line) {
 }
 
 function hideLineModal() {
+    hideLineRename();
+
     mode = "view";
     showMenuBarButtons("view");
+
     document.getElementById("line_modal").style.visibility = "hidden";
+    document.getElementById("line_name").style.display = "none";
 
     if(lineStationList != null) lineStationList.removeAllEventListeners();
 }

@@ -100,8 +100,8 @@ input {
     -moz-outline-radius: 10px;
     box-sizing: border-box;
     padding-inline: 5px;
-    width: 100%;
     margin-top: 0;
+    width: 100%;
 }
 
 input:hover, input:active, :focus-visible {
@@ -302,7 +302,43 @@ th {
     font-size: smaller;
 }
 
+.inline {
+    display: flex;
+    align-items:flex-start;
+}
+
+.inline h1, .inline h2, .inline h3 {
+    display: inline;
+}
+
 #line_station_list{
     height: 300px;
     overflow-y: scroll;
+}
+
+#line_name:hover {
+    cursor: text;
+}
+
+#line_edit_name {
+    width: 24px;
+    margin-inline-start: 10px;
+    align-self: center;
+}
+
+#line_edit_name:hover {
+    transform: scale(1.05);
+}
+
+#line_edit_name:active {
+    transform: scale(1.05);
+}
+
+#manage_line_rename_input {
+    display: inline;
+    font-size: 2em;
+    font-weight: 700;
+    font-family: Kanit, sans-serif;
+    text-align: left;
+    clear: both;
 }
