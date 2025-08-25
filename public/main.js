@@ -457,7 +457,14 @@ document.getElementById("btn_transit_density").addEventListener("click", e => {
 document.getElementById("btn_cancel_transit_line").addEventListener("click", e => {
     e.stopImmediatePropagation();
 
-    cancelBuildLine();
+    if(mode == "build") cancelBuildLine();
+
+    else if(mode == "move") {
+        new_transit_line_button.style.display = "none";
+        setBuildButtonText("view");
+        mode = "view";
+        showMenuBarButtons("view");
+    }
 }); 
 
 document.getElementById("btn_simulate").addEventListener("click", e => {
@@ -657,12 +664,6 @@ new_transit_line_button.addEventListener("click", (e) => {
         hideAllMenus();
         showBuildLineDialog();
     }
-    else if(mode == "move") {
-        showStationQuickMenu(convertToCanvasCoordinates(selectedStation.location), selectedStation);
-        setBuildButtonText("view");
-        mode = "view";
-        showMenuBarButtons("view");
-    }
     else{
         // Complete the line build and calculate the cost of the build
         showConfirmLineDialog();
@@ -670,8 +671,15 @@ new_transit_line_button.addEventListener("click", (e) => {
 });
 
 function setBuildButtonText(state) {
-    if(state == "build") new_transit_line_button.innerHTML = "Finish Transit Line";
-    else if(state == "move") new_transit_line_button.innerHTML = "Cancel station move";
+    new_transit_line_button.style.display = "inline";
+    if(state == "build") {        
+        document.getElementById("btn_cancel_transit_line").innerHTML = "Cancel build";
+        new_transit_line_button.innerHTML = "Finish Transit Line";
+    }
+    else if(state == "move") {
+        new_transit_line_button.style.display = "None";
+        document.getElementById("btn_cancel_transit_line").innerHTML = "Cancel move station";
+    }
     else new_transit_line_button.innerHTML = "New Transit Line";
 }
 
