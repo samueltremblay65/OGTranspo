@@ -95,6 +95,8 @@ canvas {
 
 input {
     font-family: inherit;
+    font-size: large;
+    padding: 10px;
     border: 1px solid black;
     border-radius: 10px;
     -moz-outline-radius: 10px;
@@ -384,5 +386,9 @@ th {
 }
 
 .text_option_picker ul {
+    margin-block: 10px;
+}
+
+#input_line_name {
     margin-block: 10px;
 }

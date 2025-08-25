@@ -38,7 +38,7 @@ class Station {
             if(station.lines.includes(this.lines[i])){
                 const line = this.lines[i];
                 const time = line.calculateJourneyTime(this, station);
-                const step = new TransitStep(this, station, "metro", line, 0);
+                const step = new TransitStep(this, station, "transit", line, 0);
                 const trip = new TransitTrip([step]);
 
                 if(shortestTime == null) {
@@ -75,7 +75,7 @@ class Station {
                     return;
                 }
                 else {
-                    const step = new TransitStep(this, stop, "metro", line, 0);
+                    const step = new TransitStep(this, stop, "transit", line, 0);
                     const trip = new TransitTrip([step]);
                     trip.addVisitedConnectionPoints(line.getVisitedConnectionPoints(this, stop));
                     queue.push(trip);
@@ -138,7 +138,7 @@ class Station {
 
                 connectionPoints.forEach(connectionPoint => {
                     if(!trip.visited.includes(connectionPoint) && connectionPoint != station) {
-                        const new_trip = new TransitTrip([...trip.steps, new TransitStep(currentStop, connectionPoint, "metro", line, 0)]);
+                        const new_trip = new TransitTrip([...trip.steps, new TransitStep(currentStop, connectionPoint, "transit", line, 0)]);
                         new_trip.visited = [...trip.visited];
                         new_trip.addVisitedConnectionPoints(line.getVisitedConnectionPoints(currentStop, connectionPoint));
                         queue.push(new_trip);

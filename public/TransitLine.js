@@ -1,14 +1,56 @@
 class TransitLine {
-    constructor(name, color, train_speed, stop_time, id) { 
+    constructor(name, color, type, id) { 
     this.name = name;
     this.color = color;
+    this.type = type;
     this.stops = [];
-    this.train_speed = train_speed;
-    this.stop_time = stop_time;
-    this.type = "Metro";
+
+    this.updateTransitTypeParameters();
 
     if(id != null) this.id = id;
     else this.id = crypto.randomUUID();
+  }
+
+  updateTransitTypeParameters() {
+    this.train_speed = TRANSIT_PARAMETERS[this.type].TRAIN_SPEED;
+    this.stop_time = TRANSIT_PARAMETERS[this.type].STOP_TIME;
+    this.rail_cost = TRANSIT_PARAMETERS[this.type].RAIL_M_COST;
+    this.station_cost = TRANSIT_PARAMETERS[this.type].STATION_COST;
+  }
+
+  calculateCost() {
+    let cost = 0;
+    cost += this.calculateStationCost();
+
+    if(this.stops.length < 2) {
+        return cost;
+    }
+
+    cost += this.calculateRailCost();
+
+    return cost;
+  }
+
+  calculateStationCost() {
+    let cost = 0;
+    cost += this.station_cost * this.stops.length;
+    return cost;
+  }
+
+  calculateRailCost() {
+    let cost = 0;
+    for(let i = 0; i < this.stops.length - 1; i++) {
+        cost += this.rail_cost * M_PER_PIXEL * this.stops[i].location.distanceTo(this.stops[i+1].location);
+    }
+    return cost;
+  } 
+
+  calculateRailMeters() {
+    let meters = 0;
+    for(let i = 0; i < this.stops.length - 1; i++) {
+        meters += M_PER_PIXEL * this.stops[i].location.distanceTo(this.stops[i+1].location);
+    }
+    return meters;
   }
 
   // Assumes that both stops are on this line
@@ -88,7 +130,7 @@ class TransitLine {
   }
 
   calculateTrainTime(distance) {
-    return distance * 8 / this.train_speed;
+    return distance * M_PER_PIXEL / this.train_speed;
   }
 
   addStop(station) {
