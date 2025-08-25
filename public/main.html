@@ -53,8 +53,10 @@
 
         <div class="modal" id="build_line_modal">
             <h1>Build new transit line</h1>
-            <input type="text" placeholder="Line name" id="input_line_name">
             <p>After planning the route, the cost estimation of the project will be calculated</p>
+
+            <input type="text" placeholder="Line name" id="input_line_name">
+
             <div class="buttons">
                 <button class="green" id="btn_build_line_continue">Plan line</button>
                 <button id="btn_build_line_cancel">Cancel</button>
@@ -152,8 +154,13 @@
         </div>
         
         <div class="modal" id="confirm_line_modal">
-            <h1>Build cost</h1>
-            <div><h3 class="result">Total Project Cost: </h3><p class="result" id="tb_line_cost"></p></div>
+            <h2>Transit Type</h2>
+            <div id="build_type_picker"></div>
+
+            <br>
+
+            <h2>Total Project Cost</h2>
+            <p class="result" id="tb_line_cost"></p>
             <hr>
             <div><h3 class="result">Number of stations built: </h3><p class="result" id="tb_confirm_number_station"></p></div>
             <div><h3 class="result">Station cost: </h3><p class="result" id="tb_confirm_station_cost"></p></div>

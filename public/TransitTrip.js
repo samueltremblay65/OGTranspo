@@ -8,7 +8,7 @@ class TransitTrip {
         let time = 0;
         this.steps.forEach(step => {
             if(step.mode == "walk") time += step.walk_time;
-            if(step.mode == "metro") time += step.line.calculateJourneyTime(step.start, step.end);
+            if(step.mode == "transit") time += step.line.calculateJourneyTime(step.start, step.end);
         });
         return time;
     }
@@ -18,7 +18,7 @@ class TransitTrip {
         let time = 0;
         do {
             if(this.steps[i].mode == "walk") time += this.steps[i].walk_time;
-            if(this.steps[i].mode == "metro") time += this.steps[i].line.calculateJourneyTime(this.steps[i].start, this.steps[i].end);
+            if(this.steps[i].mode == "transit") time += this.steps[i].line.calculateJourneyTime(this.steps[i].start, this.steps[i].end);
         } while(this.steps[i++] != step)
         return time;
     }
@@ -29,7 +29,7 @@ class TransitTrip {
 
     addMetroTransfer(station, line) {
         const start = this.steps[this.steps.length - 1].end;
-        const step = new TransitStep(start, station, "metro", line, 0);
+        const step = new TransitStep(start, station, "transit", line, 0);
         this.steps.push(step);
     }
 

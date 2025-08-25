@@ -29,11 +29,14 @@ let selectedLine = null;
 let lineStationList = null;
 let lineColorPicker = null;
 let lineTransitTypePicker = null;
+let buildTypePicker = null;
 
 let color = 0;
 const LINE_COLORS = ['blue', 'green', 'yellow', 'orange','red','pink', 'brown', 'grey', "lime"];
 
 const LINE_MENU_COLORS = ["#b9caed", "#94d1a7", "#f7f4b2", "#ffcc73", "#e59e9e","#ffe3f1", "#cfc4b8", "#dbdbdb", "#dbf5ba"];
+
+const TRANSIT_TYPES = ["Metro", "Tram"];
 
 // Loading screen
 canvas.style.visibility = "hidden";
@@ -206,7 +209,6 @@ function undoAction(action) {
         setBuildButtonText("view");
         showMenuBarButtons("view");
         action.station.location = action.oldLocation;
-        updateBudgetDisplay(STARTING_BUDGET - calculateTotalCost());
     }
     else if(action.type == "reorder_line_stations") {
         let station = action.line.stops[action.newIndex];
@@ -215,7 +217,6 @@ function undoAction(action) {
 
         reloadLineModalStations(action.line);
         lineStationList.refreshItems();
-        updateBudgetDisplay(STARTING_BUDGET - calculateTotalCost());
     }
     else if(action.type == "line_rename") {
         action.line.name = action.oldName;
@@ -223,47 +224,13 @@ function undoAction(action) {
             refreshManageModalLineList();
         }
     }
-}
 
-// Costing functions
-function calculateLineCost(line) {
-    let cost = 0;
-    cost += calculateStationCost(line);
-
-    if(line.stops.length < 2) {
-        return cost;
-    }
-
-    cost += calculateRailCost(line);
-
-    return cost;
-}
-
-function calculateStationCost(line) {
-    let cost = 0;
-    cost += COST_STATION * line.stops.length;
-    return cost;
-}
-
-function calculateRailCost(line) {
-    let cost = 0;
-    for(let i = 0; i < line.stops.length - 1; i++) {
-        cost += COST_RAIL_M * M_PER_PIXEL * line.stops[i].location.distanceTo(line.stops[i+1].location);
-    }
-    return cost;
-}
-
-function calculateRailMeters(line) {
-    let meters = 0;
-    for(let i = 0; i < line.stops.length - 1; i++) {
-        meters += M_PER_PIXEL * line.stops[i].location.distanceTo(line.stops[i+1].location);
-    }
-    return meters;
+    updateBudgetDisplay(STARTING_BUDGET - calculateTotalCost());
 }
 
 function calculateTotalCost() {
     let cost = 0;
-    transit_lines.forEach((line) => cost += calculateLineCost(line));
+    transit_lines.forEach((line) => cost += line.calculateCost());
     return cost;
 }
 
@@ -486,6 +453,7 @@ document.getElementById("btn_simulate").addEventListener("click", e => {
         return;
     };
 
+    test_simulate();
     simulate();
 });
 
@@ -500,7 +468,7 @@ document.getElementById("btn_build_line_continue").addEventListener("click", fun
     let line_name = document.getElementById("input_line_name").value;
 
     if(line_name == null || line_name.length == 0) line_name = "Line " + (transit_lines.length + 1);
-    let new_line = new TransitLine(line_name, LINE_COLORS[color % LINE_COLORS.length], TRAIN_SPEED, STOP_TIME);
+    let new_line = new TransitLine(line_name, LINE_COLORS[color % LINE_COLORS.length], TRANSIT_TYPES[0]);
     transit_lines.push(new_line);
     selectedLine = new_line;
     actionStack.push({type: "add_line", target: new_line, color: color});
@@ -572,7 +540,7 @@ document.getElementById("btn_save").addEventListener("click", function(e) {
         });
 
         const data = {id: line.id, name: line.name, color: line.color, 
-            stops: stop_ids, train_speed: line.train_speed, stop_time: line.stop_time};
+            stops: stop_ids, type: line.type};
         line_data.push(data);
     });
 
@@ -652,7 +620,7 @@ function loadFromJson(json) {
     });
 
     line_data.forEach(data => {
-        const line = new TransitLine(data.name, data.color, data.train_speed, data.stop_time, data.id);
+        const line = new TransitLine(data.name, data.color, data.type, data.id);
         data.stops.forEach(station_id => {
             const station = stations.find(station => station.id == station_id);
             line.addStop(station);
@@ -1117,8 +1085,7 @@ function showLineModal(line) {
     const transitTypePickerContainer = document.getElementById("line_transit_type_picker");
 
     if(lineTransitTypePicker == null) {
-        const options = ["Metro", "Tram", "Streetcar"];
-        lineTransitTypePicker = new TextOptionPicker(transitTypePickerContainer, options, "Metro", selectTransitType);
+        lineTransitTypePicker = new TextOptionPicker(transitTypePickerContainer, TRANSIT_TYPES, line.type, selectTransitType);
     }
     else {
         lineTransitTypePicker.refresh(line.type);
@@ -1134,6 +1101,8 @@ function showLineModal(line) {
 
     function selectTransitType(type) {
         selectedLine.type = type;
+        selectedLine.updateTransitTypeParameters();
+        updateBudgetDisplay(STARTING_BUDGET - calculateTotalCost());
     }
 }
 
@@ -1196,22 +1165,36 @@ function hideBuildLineDialog() {
 function showConfirmLineDialog() {
     document.getElementById("confirm_line_modal").style.visibility = "visible";
 
-    const line_cost = calculateLineCost(selectedLine);
-
-    document.getElementById("tb_line_cost").innerHTML = format_cost(line_cost);
-    document.getElementById("tb_confirm_number_station").innerHTML = selectedLine.stops.length;
-    document.getElementById("tb_confirm_station_cost").innerHTML = format_cost(calculateStationCost(selectedLine));
-    document.getElementById("tb_confirm_rail_km").innerHTML = format_length(calculateRailMeters(selectedLine) / 1000, "km");
-    document.getElementById("tb_confirm_rail_cost").innerHTML = format_cost(calculateRailCost(selectedLine));
-
     actionStack.push({type:"finish_line", line: selectedLine});
     mode = "confirm_line_menu";
     showMenuBarButtons("modal");
     setBuildButtonText("view");
+
+    const buildTypeContainer = document.getElementById("build_type_picker");
+    buildTypePicker = new TextOptionPicker(buildTypeContainer, TRANSIT_TYPES, "Metro", handleBuildTypeChange);
+    refreshCostingEstimates();
+
+    function handleBuildTypeChange(type) {
+        selectedLine.type = type;
+        selectedLine.updateTransitTypeParameters();
+        refreshCostingEstimates();
+    }
+}
+
+function refreshCostingEstimates() {
+    const line_cost = selectedLine.calculateCost();
+    document.getElementById("tb_line_cost").innerHTML = format_cost(line_cost);
+    document.getElementById("tb_confirm_number_station").innerHTML = selectedLine.stops.length;
+    document.getElementById("tb_confirm_station_cost").innerHTML = format_cost(selectedLine.calculateStationCost());
+    document.getElementById("tb_confirm_rail_km").innerHTML = format_length(selectedLine.calculateRailMeters() / 1000, "km");
+    document.getElementById("tb_confirm_rail_cost").innerHTML = format_cost(selectedLine.calculateRailCost());
 }
 
 function hideConfirmLineDialog() {
     document.getElementById("confirm_line_modal").style.visibility = "hidden";
+
+    if(buildTypePicker != null) buildTypePicker.destruct();
+    buildTypePicker = null;
 }
 
 function updateBudgetDisplay(remaining) {
@@ -1405,7 +1388,7 @@ function calculateTransitStatistics(trips) {
             if(step.mode == "walk") {
                 walk_time += step.walk_time;
             }
-            else if(step.mode == "metro") {
+            else if(step.mode == "transit") {
                 metro_line_usage[step.line.name].trips++;
                 metro_line_usage[step.line.name].total_distance += step.start.location.distanceTo(step.end.location) * M_PER_PIXEL;
                 
@@ -1421,7 +1404,7 @@ function calculateTransitStatistics(trips) {
 
         let trip_connections = 0;
         trip.steps.forEach(step => {
-            if(step.mode == "metro") trip_connections++;
+            if(step.mode == "transit") trip_connections++;
         });
 
         if(trip_connections != 0) trip_connections--;
