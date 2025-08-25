@@ -33,7 +33,6 @@ let buildTypePicker = null;
 
 let color = 0;
 const LINE_COLORS = ['blue', 'green', 'yellow', 'orange','red','pink', 'brown', 'grey', "lime"];
-
 const LINE_MENU_COLORS = ["#b9caed", "#94d1a7", "#f7f4b2", "#ffcc73", "#e59e9e","#ffe3f1", "#cfc4b8", "#dbdbdb", "#dbf5ba"];
 
 const TRANSIT_TYPES = ["Metro", "Tram"];
@@ -168,6 +167,7 @@ function undoAction(action) {
         color = action.color;
         mode = "view";
         selectedLine = null;
+        hideAllMenus();
         setBuildButtonText("view");
         showMenuBarButtons("view");
     }
@@ -222,6 +222,12 @@ function undoAction(action) {
         action.line.name = action.oldName;
         if(mode == "manage") {
             refreshManageModalLineList();
+        }
+    }
+    else if(action.type == "change_transit_type") {
+        action.line.type = action.oldType;
+        if(mode == "line_menu") {
+            lineTransitTypePicker.refresh(action.oldType);
         }
     }
 
@@ -307,7 +313,14 @@ function checkKey(e) {
 
     if (e.ctrlKey && e.keyCode == 90) {
         const action = actionStack.pop();
-        if(action != null) undoAction(action);
+        if(action != null) {
+            if(canUndo(action)) {
+                undoAction(action);
+            }
+            else {
+                actionStack.push(action);
+            }
+        }
     }
 
     // Enter key
@@ -315,6 +328,10 @@ function checkKey(e) {
         if(document.getElementById("manage_line_rename_input").style.display != "none") {
             lineRename();
         }
+    }
+
+    function canUndo(action) {
+        if(mode == "view" || mode == "build") return true;
     }
 }
 
@@ -1058,7 +1075,7 @@ function hideManageModal() {
 function showLineModal(line) {
     hideAllMenus();
 
-    mode = "view";
+    mode = "line_menu";
     showMenuBarButtons("modal");
 
     hideLineRename();
@@ -1100,8 +1117,12 @@ function showLineModal(line) {
     }
 
     function selectTransitType(type) {
+        const oldType = selectedLine.type;
         selectedLine.type = type;
         selectedLine.updateTransitTypeParameters();
+
+        actionStack.push({type: "change_transit_type", line: selectedLine, oldType: oldType});
+
         updateBudgetDisplay(STARTING_BUDGET - calculateTotalCost());
     }
 }
@@ -1523,7 +1544,6 @@ function format_length(length, unit) {
         return Math.round(length) + "m";
     }
     return length.toFixed(2) + "km";
-
 }
 // Testing functions
 function test_simulate() {
