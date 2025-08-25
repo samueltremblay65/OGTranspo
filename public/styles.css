@@ -361,7 +361,7 @@ th {
 .color_item.selected {
     border: 3px solid black;
     transform: scale(1.05);
-    transition: 0.3s;
+    transition: padding 0.3s;
 }
 
 .text_option {
@@ -370,7 +370,7 @@ th {
     margin-inline-end: 10px;
     display: inline;
     padding: 5px;
-    transition: 0.3s;
+    transition: padding 0.3s;
 }
 
 .text_option.selected {
@@ -378,7 +378,7 @@ th {
     font-weight: 700;
     background-color: rgb(239, 203, 136);
     padding-inline: 10px;
-    transition: 0.3s;
+    transition: padding 0.3s;
 }
 
 .text_option_picker {
